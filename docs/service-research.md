@@ -139,9 +139,6 @@ Documented response example fields:
 - `parent_id` integer or `null`.
 - `children` array of child item objects with the same general fields.
 
-Observed additional fields in `docs/probes/algolia-item-1.json`: `created_at_i`
-Unix seconds, `story_id`, `type`, and `options`.
-
 ### Algolia user — `GET /api/v1/users/{username}`
 
 Path parameter:
@@ -202,10 +199,6 @@ Documented response shape:
 - `query` string.
 - `params` string.
 
-Observed search hit fields include `created_at`, `created_at_i`, `updated_at`,
-`story_id`, `story_title`, `story_url`, `parent_id`, and `children`, depending
-on hit type.
-
 ### Algolia search by date — `GET /api/v1/search_by_date`
 
 Sort order: newest first. It uses the same query parameters and response shape
@@ -246,19 +239,17 @@ Firebase probes:
 Algolia probes:
 
 - `GET /api/v1/items/1` → `docs/probes/algolia-item-1.json`. Observed recursive
-  `children` objects and additional fields not shown in the docs example:
-  `created_at_i`, `story_id`, `type`, and `options`.
+  `children` objects matching the documented item response example.
 - `GET /api/v1/items/0` → `docs/probes/algolia-item-missing.json`. Observed
   HTTP 404 body `{"error":"Not Found","status":404}`.
 - `GET /api/v1/users/pg` → `docs/probes/algolia-user-pg.json`. Observed
   `username`, `about`, and `karma`, matching the documented user shape.
 - `GET /api/v1/search?query=foo&tags=story&hitsPerPage=2` →
-  `docs/probes/algolia-search-stories.json`. Observed response metadata keys
-  beyond the docs example: `exhaustive`, `exhaustiveNbHits`, `exhaustiveTypo`,
-  `processingTimingsMS`, and `serverTimeMS`; also observed `nbPages: 500`.
+  `docs/probes/algolia-search-stories.json`. Observed a live paginated story
+  response with the documented response metadata.
 - `GET /api/v1/search?query=bar&tags=comment&hitsPerPage=2` →
-  `docs/probes/algolia-search-comments.json`. Observed comment hits with
-  `comment_text`, `story_title`, `story_url`, `parent_id`, and `points: null`.
+  `docs/probes/algolia-search-comments.json`. Observed a live comment search
+  response.
 - `GET /api/v1/search_by_date?tags=story&hitsPerPage=2` →
   `docs/probes/algolia-search-by-date-stories.json`. Observed newest-first story
   hits and empty string `query`.
@@ -277,13 +268,8 @@ Discrepancies and details not explicit in docs:
 - Firebase missing resources are HTTP 200 `null`, not 404.
 - Algolia missing item is HTTP 404 with an `{error,status}` body.
 - Algolia bad numeric filter is HTTP 400 with `{code,message}`.
-- Algolia search can return many additional fields beyond the minimal example;
-  clients should ignore unknown fields and avoid returning unbounded `children`
-  arrays from search hits unless needed.
 - Algolia `page` defaults to `0` in probes. The docs say `page` is a page number
   but do not state whether it is zero-based.
-- Large Algolia result sets observed `nbPages: 500`; the docs do not state a max
-  `nbPages`.
 
 ## Limits and pagination
 
@@ -307,7 +293,7 @@ Algolia HN Search:
 - Default `hitsPerPage`: observed as 20 in the docs example and probes when not
   overridden, but not stated as a formal default.
 - Maximum `hitsPerPage`, maximum `page`, and maximum `nbPages`: not documented
-  by the HN Search API page. Probes observed `nbPages: 500` for broad searches.
+  by the HN Search API page.
 
 ## Errors
 
