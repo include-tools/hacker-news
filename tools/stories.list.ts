@@ -4,7 +4,7 @@ interface HNStorySummary {
   url?: string;
   by?: string;
   score?: number;
-  time?: number;
+  posted_at?: Date;
   comments: number;
 }
 
@@ -19,11 +19,7 @@ interface HNStoriesResult {
 const KINDS = ["top", "new", "best"];
 
 /**
- * List current Hacker News stories. kind is "top" (default), "new", or
- * "best". limit defaults to 10 and is capped at 30; truncated reports whether
- * more stories were available upstream than were returned.
  * @effect readOnly
- * @idempotent
  */
 export default async function tool(kind?: string, limit?: number): Promise<HNStoriesResult> {
   const k = kind ?? "top";
@@ -59,7 +55,7 @@ export default async function tool(kind?: string, limit?: number): Promise<HNSto
       url: item.url,
       by: item.by,
       score: item.score,
-      time: item.time,
+      posted_at: typeof item.time === "number" ? new Date(item.time * 1000) : undefined,
       comments: item.descendants ?? 0,
     });
   }

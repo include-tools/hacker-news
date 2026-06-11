@@ -15,7 +15,7 @@ Fetch one item (story, comment, job, poll, pollopt) by numeric id.
 - Upstream: `GET /v0/item/{id}.json`.
 - `id` must be a positive integer (`validation_error` otherwise).
 - A `null` upstream body means the item does not exist → `not_found` error.
-- Output: `{id, type, by?, time?, title?, url?, text?, score?, descendants?, kids_count, deleted, dead}`.
+- Output: `{id, type, by?, posted_at?, title?, url?, text?, score?, descendants?, kids_count, deleted, dead}` (`posted_at` is a native `Date`).
   `kids_count` is the number of direct children; the full `kids` id array is
   intentionally not returned (unbounded).
 
@@ -29,7 +29,7 @@ List current stories.
 - Deleted/dead/null items are skipped (so `actual_count` may be < `limit`).
 - Output: `{kind, requested_limit, actual_count, truncated, stories[]}` where
   `truncated` is true when more ids were available upstream than requested and
-  each story is `{id, title?, url?, by?, score?, time?, comments}`.
+  each story is `{id, title?, url?, by?, score?, posted_at?, comments}` (`posted_at` is a native `Date`).
 
 ## Bounds
 

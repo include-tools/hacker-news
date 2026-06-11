@@ -2,7 +2,6 @@ interface HNItem {
   id: number;
   type: string;
   by?: string;
-  time?: number;
   posted_at?: Date;
   title?: string;
   url?: string;
@@ -17,7 +16,6 @@ interface HNItem {
 /**
  * Fetch a single Hacker News item (story, comment, job, poll, or pollopt) by id.
  * @effect readOnly
- * @idempotent
  */
 export default async function tool(id: number): Promise<HNItem> {
   if (!Number.isInteger(id) || id <= 0) {
@@ -35,7 +33,6 @@ export default async function tool(id: number): Promise<HNItem> {
     id: data.id,
     type: data.type ?? "unknown",
     by: data.by,
-    time: data.time,
     posted_at: typeof data.time === "number" ? new Date(data.time * 1000) : undefined,
     title: data.title,
     url: data.url,
