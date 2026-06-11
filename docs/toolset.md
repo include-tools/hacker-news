@@ -2,20 +2,19 @@
 
 ## Toolset purpose
 
-Give a coding agent bounded, task-shaped read access to Hacker News content so
-it can perform the eight documented agent outcomes in `docs/use-cases.md`:
-summarise feeds (front page, Show/Ask/Job), expand a single item, reconstruct a
-comment thread, profile a user, poll for changes, monitor keywords client-side,
-and compute client-side analytics over a fetched set.
+Give a coding agent bounded, task-shaped read access to Hacker News content and
+search so it can perform the documented outcomes in `docs/use-cases.md`:
+summarise feeds (front page, Show/Ask/Job), search stories and comments, expand a
+single item, reconstruct a comment thread, profile a user, poll for changes, and
+compute client-side analytics over fetched or searched results.
 
-The toolset wraps the official read-only Firebase JSON API
-(`https://hacker-news.firebaseio.com/v0/`, see `docs/service-research.md`). That
-upstream is a low-level identity store: every feed is a bare array of item ids,
-and every item must be fetched one id at a time. The agent-facing value of this
-toolset is therefore **fan-out compression with explicit bounds**: a single tool
-call resolves a feed-of-ids-plus-N-item-fetches into one normalized, capped,
-observable result, instead of forcing the agent to orchestrate dozens of raw id
-lookups by hand.
+The toolset wraps two official public read APIs (see `docs/service-research.md`):
+the Hacker News Firebase JSON API (`https://hacker-news.firebaseio.com/v0/`) and
+the Algolia HN Search API (`https://hn.algolia.com/api/v1/`). Firebase remains
+the canonical identity store: every feed is a bare array of item ids, and every
+item must be fetched one id at a time. Algolia supplies server-side search and
+exact Algolia user lookup with its own result shape. The agent-facing value is
+therefore **fan-out/search compression with explicit bounds**.
 
 Every tool is read-only. The Hacker News API documents no write, vote, post, or
 moderation endpoint, so this toolset cannot mutate anything; that is a property
@@ -41,16 +40,17 @@ of the upstream, not an omission (see [Out of scope](#out-of-scope)).
 - **Text is raw HTML.** `title`, `text`, `about`, and `url` are passed through
   exactly as Hacker News returns them (HTML markup and entities **not** decoded
   or sanitised). Strip/escape on the agent side before display.
-- **Search, filtering, and analytics are your job.** The API has no search; for
-  keyword/domain monitoring and aggregates, fetch a set with these tools and
-  filter/aggregate client-side (use cases #7 and #8).
+- **Use search tools for server-side keyword work.** `stories.search` and
+  `comments.search` call Algolia HN Search. Analytics outside documented search
+  filters are still computed client-side.
 - **Timestamps are native `Date`s.** Unix-seconds (`time`, `created`) are
   converted to `Date` objects (`posted_at`, `created_at`); do not expect epoch
   integers.
 
 ## Resource and concept model
 
-Hacker News has exactly two identified resources plus three derived feeds:
+Hacker News has two primary Firebase resources, derived Firebase feeds, and a
+separate Algolia search index:
 
 - **Item** — the universal content node. One integer `id`; a `type` field
   discriminates `story | comment | job | poll | pollopt`. Stories, Ask HN, Show
@@ -66,6 +66,10 @@ Hacker News has exactly two identified resources plus three derived feeds:
   downward from it discovers brand-new items of any type.
 - **updates** — a change feed `{ items: id[], profiles: username[] }` of recently
   changed items and profiles.
+- **Algolia search hits** — paginated story/comment results from
+  `/api/v1/search` or `/api/v1/search_by_date`, with metadata (`nbHits`,
+  `nbPages`, `hitsPerPage`) and hit fields such as `objectID`, `title`,
+  `comment_text`, `_tags`, `story_id`, `parent_id`, and timestamps.
 
 ### Canonical normalized `Item`
 
@@ -108,10 +112,10 @@ interface Item {
 
 ## Authentication
 
-**None — and the toolset must send none.** The Hacker News API is fully public
-and unauthenticated: no API keys, bearer tokens, OAuth, cookies, or credential
-query/headers exist or are accepted. There is no credential to inject and
-nothing to read from the environment.
+**None — and the toolset must send none.** The Firebase API and Algolia HN
+Search API are fully public and unauthenticated: no API keys, bearer tokens,
+OAuth, cookies, or credential query/headers are documented. There is no
+credential to inject and nothing to read from the environment.
 
 Contract consequence for tests: every host-call assertion checks that requests
 carry **no** `Authorization` header and no credential query parameter. Adding
@@ -119,25 +123,21 @@ auth would be a defect, not a feature.
 
 ## Global bounds and error policy
 
-**Host.** Exactly one host is contacted: `hacker-news.firebaseio.com`. It is the
-only entry in the manifest's `allowed_hosts`. No other host (including the
-separate Algolia HN Search service) is reachable from the sandbox.
+**Hosts.** Exactly two hosts are contacted and both are declared in
+`allowed_hosts`: `hacker-news.firebaseio.com` and `hn.algolia.com`.
 
-**Request shape.** Every upstream call is `GET https://hacker-news.firebaseio.com/v0/…json`.
-The optional `?print=pretty` formatting flag is **never** sent (it changes only
-whitespace). No request body, no custom headers.
+**Request shape.** Firebase calls are `GET https://hacker-news.firebaseio.com/v0/…json`.
+Algolia calls are `GET https://hn.algolia.com/api/v1/…`. No request body, no
+custom headers, no credentials. Firebase `?print=pretty` is never sent.
 
 **Retries / determinism.** No automatic retries. Each logical fetch maps to
 exactly one host call, so call-count and call-order assertions are exact. A
 transient upstream failure surfaces as `upstream_error` (root) or a counted
 `failed_fetch` (fan-out member) rather than being silently retried.
 
-**Pagination.** The upstream has no cursors, `limit`, `offset`, or `page`
-params — id lists are returned whole. This toolset paginates **client-side**:
-`stories.list` exposes `offset`+`limit` slicing over the ranked id array;
-`threads.get` bounds by depth + node budget; `users.get` and `items.recent`
-bound by a hydration count. No tool ever fetches a feed's full id array as
-output.
+**Pagination.** Firebase has no cursors, `limit`, `offset`, or `page` params; id
+lists are returned whole and sliced client-side. Algolia search uses documented
+`page` and `hitsPerPage`; the toolset caps `hitsPerPage` at 50.
 
 **Error taxonomy.** Tools signal failure by throwing `Error` whose message is
 `"<code>: <detail>"`. Three codes, stable across all tools:
@@ -178,10 +178,11 @@ of primitives, or the objects defined here. No JSON stand-ins (no epoch-int
 "dates", no stringified numbers). This makes the tools codemode-only, which is
 the intended invocation path.
 
-**File layout and shared helpers (tool rule 10).** The six entry files are named
+**File layout and shared helpers (tool rule 10).** Entry files are named
 `{resource}.{method}.ts`: `tools/items.get.ts`, `tools/stories.list.ts`,
-`tools/threads.get.ts`, `tools/users.get.ts`, `tools/updates.get.ts`,
-`tools/items.recent.ts`. Logic common to all of them lives in one helper module
+`tools/stories.search.ts`, `tools/comments.search.ts`, `tools/threads.get.ts`,
+`tools/users.get.ts`, `tools/users.search.ts`, `tools/updates.get.ts`,
+`tools/items.recent.ts`. Logic common to them lives in one helper module
 included via `additionalTypeScriptGlobs` (e.g. `"additionalTypeScriptGlobs":
 ["lib/**/*.ts"]` in `toolbox.devpkg.json`) — never copied per file:
 
@@ -195,6 +196,9 @@ included via `additionalTypeScriptGlobs` (e.g. `"additionalTypeScriptGlobs":
   taxonomy codes.
 - Count/accounting helpers maintaining the `requested_limits` / `actual_counts`
   invariants and the skip/fail bucket classification shared by every fan-out tool.
+- `fetchAlgoliaJson(path)` / `searchAlgolia(req)` — issue the single
+  unauthenticated Algolia request, map non-2xx/non-JSON to `upstream_error`, and
+  normalize bounded search hits.
 
 Entry files stay thin (validate → call helpers → assemble result). Each carries a
 single `@effect readOnly` JSDoc tag and **no** `@idempotent` tag (rules 8–9).
@@ -211,10 +215,10 @@ not a deferred feature:
   profiles. The API documents **no** create/update/delete endpoint; it is
   read-only. There are no idempotency keys or transactions because there are no
   writes. (Those actions exist only on the HN website.)
-- **Server-side search / filter / sort / date-range / author query** — the API
-  offers none. (Full-text search lives in the separate Algolia HN Search service
-  on a different host, which is intentionally **not** in `allowed_hosts`.)
-  Keyword/domain monitoring (use case #7) is done agent-side over fetched items.
+- **Firebase server-side search / filter / sort / date-range / author query** —
+  Firebase offers none. Use the Algolia-backed search tools where their
+  documented query/tag/numeric filters apply.
+- **Algolia full-text user search** — Algolia documents exact user lookup only.
 - **Aggregate analytics endpoints** — none exist; trends/score-distributions/
   domain-counts (use case #8) are computed agent-side from items these tools
   return.
@@ -233,12 +237,15 @@ not a deferred feature:
 
 | Tool | Agent outcome (use case) | Upstream endpoints | Effect | Worst-case host calls |
 |------|--------------------------|--------------------|--------|-----------------------|
-| `items.get` | Expand one item by id (#3) | `item/{id}` | readOnly | 1 |
-| `stories.list` | Front page & Show/Ask/Job feeds; analytics source (#1, #2, #7, #8) | `{kind}stories` + `item/{id}`×N | readOnly | 1 + limit (≤ 31) |
-| `threads.get` | Story + comment-thread report (#4) | `item/{id}` (root + recursive comments) | readOnly | 1 + max_nodes (≤ 201) |
-| `users.get` | Profile a user; optional recent submissions (#5) | `user/{name}` + `item/{id}`×N | readOnly | 1 + include_recent (≤ 31) |
-| `updates.get` | Lightweight change feed (#6) | `updates` | readOnly | 1 |
-| `items.recent` | Discover brand-new items via count-down (#6) | `maxitem` + `item/{id}`×N | readOnly | 1 + 2·limit (≤ 61) |
+| `items.get` | Expand one item by id (#4) | `item/{id}` | readOnly | 1 |
+| `stories.list` | Front page & Show/Ask/Job feeds; analytics source (#1, #8) | `{kind}stories` + `item/{id}`×N | readOnly | 1 + limit (≤ 31) |
+| `stories.search` | Search HN stories via Algolia (#2) | Algolia `search` / `search_by_date` | readOnly | 1 |
+| `comments.search` | Search HN comments via Algolia (#3) | Algolia `search` / `search_by_date` | readOnly | 1 |
+| `threads.get` | Story + comment-thread report (#5) | `item/{id}` (root + recursive comments) | readOnly | 1 + max_nodes (≤ 201) |
+| `users.get` | Profile a user; optional recent submissions (#6) | `user/{name}` + `item/{id}`×N | readOnly | 1 + include_recent (≤ 31) |
+| `users.search` | Exact Algolia user lookup (#6) | Algolia `users/{username}` | readOnly | 1 |
+| `updates.get` | Lightweight change feed (#7) | `updates` | readOnly | 1 |
+| `items.recent` | Discover brand-new items via count-down (#7) | `maxitem` + `item/{id}`×N | readOnly | 1 + 2·limit (≤ 61) |
 
 No tool is `@idempotent` (live mutable data). All read from one host.
 
@@ -252,7 +259,7 @@ poll, pollopt) by its numeric id into the canonical normalized [`Item`](#canonic
 **Use when** the agent already has an item id — from an HN URL
 (`news.ycombinator.com/item?id=…`), from a feed/thread result, from a user's
 submissions, or from `updates.get` — and wants that one record. Foundational
-deep-link/lookup (use case #3).
+deep-link/lookup (use case #4).
 
 **Do not use when** you need a story's discussion (use `threads.get`), a whole
 feed (use `stories.list`), or to discover ids you don't yet have (use
@@ -316,8 +323,8 @@ can never produce a host call.
 
 **Purpose.** Compress "fetch a ranked feed, then resolve N ids into records" into
 one bounded call. Covers the front page (`top`/`best`/`new`) and the category
-feeds (`ask`/`show`/`job`) — use cases #1 and #2 — and is the standard source set
-for client-side keyword monitoring (#7) and analytics (#8).
+feeds (`ask`/`show`/`job`) — use case #1 — and is a source set for client-side
+analytics (#8).
 
 **Use when** the agent wants the current ranked contents of a feed: top stories,
 best stories, newest stories, latest Show HN / Ask HN / job posts.
@@ -436,7 +443,7 @@ drop them.
 
 **Purpose.** Reconstruct the discussion under an item as a **bounded** nested
 comment tree: fetch the root item, then walk its `kids` recursively within a
-depth and node budget. Covers the story + comment-thread report (use case #4).
+depth and node budget. Covers the story + comment-thread report (use case #5).
 
 **Use when** the agent wants the conversation under a story/Ask/poll (or any item
 with replies) to summarise or analyse — not just the top-line counts.
@@ -531,7 +538,7 @@ a visited `Set` of ids guarantees each id is fetched at most once.
 - Per-comment null/deleted/dead/non-2xx → counted, walk continues (partial
   result). A deleted/dead comment's subtree is pruned (documented limitation:
   live replies nested under a since-deleted parent are not returned — matches use
-  case #4's "skip deleted/dead").
+  case #5's "skip deleted/dead").
 
 **Test grounding (fixtures + host-call assertions).**
 
@@ -568,7 +575,7 @@ are preserved.
 
 **Purpose.** Resolve a Hacker News user profile by username and, optionally,
 hydrate their most-recent submissions into items so the agent can see *what* they
-post. Covers profiling a user (use case #5).
+post. Covers profiling a user (use case #6).
 
 **Use when** the agent has a username (from a story/comment `by`, from
 `updates.get` `profiles`, or supplied directly) and wants karma, account age,
@@ -675,7 +682,7 @@ hydration keeps call order assertable.
 **Purpose.** Return Hacker News's change feed — the ids of recently changed items
 and the usernames of recently changed profiles — so an agent can poll for change
 and re-fetch only what moved, instead of rescanning whole feeds. Covers the
-lightweight change-feed half of use case #6 (and feeds keyword monitoring, #7).
+lightweight change-feed path in use case #7.
 
 **Use when** running a monitor loop: call periodically, diff against the prior
 result, then re-hydrate the changed ids/usernames with `items.get` / `users.get`.
@@ -754,7 +761,7 @@ warrant an `items.get`/`users.get`.
 
 **Purpose.** Discover the newest items on Hacker News **of any type** by reading
 `maxitem` and walking item ids downward, hydrating up to `limit` live ones.
-Covers the count-down discovery alternative in use case #6, and surfaces the
+Covers the count-down discovery alternative in use case #7, and surfaces the
 current `max_id` for agents that bookmark a position.
 
 **Use when** the agent wants the raw "what was just created on HN" firehose
@@ -847,3 +854,117 @@ host calls.
 2 * limit` heuristic keeps the call count bounded regardless of how many recent
 ids are dead/deleted; document it so agents understand why `items_returned` can
 be below `limit`. Sequential descending walk keeps host-call order assertable.
+
+---
+
+### stories.search
+
+**Purpose.** Search Hacker News stories through Algolia HN Search with bounded
+result pages. Use relevance sort (`/api/v1/search`) for keyword work and date
+sort (`/api/v1/search_by_date`) for newest-first monitoring.
+
+**Inputs.**
+
+| Name | Type | Default | Validation |
+|------|------|---------|------------|
+| `query` | `string` | omitted | Trimmed; empty string is omitted. |
+| `sort` | `"relevance"\|"date"` | `"relevance"` | Else `validation_error`, no host calls. |
+| `limit` | `number` | `10` | Integer `1..50`; else `validation_error`. |
+| `page` | `number` | `0` | Integer `>= 0`; else `validation_error`. |
+| `scope` | `"story"\|"ask_hn"\|"show_hn"\|"front_page"` | `"story"` | Maps directly to the documented Algolia tag. |
+| `author` | `string` | omitted | Letters, numbers, `_`, `-`; becomes `author_{username}`. |
+| `since` / `until` | `number` | omitted | Non-negative Unix seconds; become `created_at_i>=...` / `<=...`. |
+| `min_points` | `number` | omitted | Non-negative integer; becomes `points>=...`. |
+| `min_comments` | `number` | omitted | Non-negative integer; becomes `num_comments>=...`. |
+
+**Output.** `AlgoliaSearchResult`:
+
+```ts
+interface AlgoliaSearchResult {
+  sort: "relevance" | "date";
+  requested_filters: {
+    query?: string;
+    tags: string[];
+    numeric_filters: string[];
+    page: number;
+    hits_per_page: number;
+  };
+  actual_counts: {
+    hits_returned: number;
+    nb_hits: number;
+    nb_pages: number;
+    page: number;
+    hits_per_page: number;
+    processing_time_ms?: number;
+  };
+  hits: AlgoliaSearchHit[];
+}
+```
+
+Each hit keeps stable scalar fields only: `object_id`, optional numeric
+`item_id`, `tags`, author, `created_at`, `updated_at`, title/url/story text,
+comment text, story linkage, parent id, points, and comment count. Search-hit
+`children` arrays are intentionally omitted because probes showed they can be
+large.
+
+**Errors and tests.** Bad inputs throw `validation_error` before any host call.
+Non-2xx or non-JSON Algolia responses throw `upstream_error`. Fixture coverage:
+happy story search, date-sort search, empty `hits: []`, bad limit, and upstream
+500.
+
+---
+
+### comments.search
+
+**Purpose.** Search Hacker News comments through Algolia HN Search. This covers
+comment keyword searches, comments by author, comments under a story, and comment
+time windows.
+
+**Inputs.**
+
+| Name | Type | Default | Validation |
+|------|------|---------|------------|
+| `query` | `string` | omitted | Trimmed; empty string is omitted. |
+| `sort` | `"relevance"\|"date"` | `"relevance"` | Else `validation_error`. |
+| `limit` | `number` | `10` | Integer `1..50`; else `validation_error`. |
+| `page` | `number` | `0` | Integer `>= 0`; else `validation_error`. |
+| `author` | `string` | omitted | Becomes `author_{username}`. |
+| `story_id` | `number` | omitted | Positive integer; becomes `story_{id}`. |
+| `since` / `until` | `number` | omitted | Non-negative Unix seconds; become created-at filters. |
+
+**Output.** Same `AlgoliaSearchResult` / `AlgoliaSearchHit` shape as
+`stories.search`, with comment hits typically carrying `comment_text`,
+`story_id`, `story_title`, `story_url`, and `parent_id`.
+
+**Errors and tests.** Bad story ids or bounds throw `validation_error` with zero
+host calls. Algolia failures throw `upstream_error`. Fixture coverage includes a
+happy comment search scoped to a story, invalid `story_id`, and an upstream 400.
+
+---
+
+### users.search
+
+**Purpose.** Resolve an Algolia HN Search user profile by exact username. The
+Algolia docs do not offer full-text user search; `users.search` is named for the
+Algolia search surface but performs exact lookup through `/api/v1/users/{username}`.
+
+**Inputs.**
+
+| Name | Type | Default | Validation |
+|------|------|---------|------------|
+| `username` | `string` | required | Non-empty after trim; sent as a path segment. |
+
+**Output.**
+
+```ts
+interface AlgoliaUserResult {
+  username: string;
+  karma: number;
+  about?: string;
+}
+```
+
+**Errors and tests.** Blank usernames throw `validation_error` before any host
+call. Non-2xx/non-JSON responses or missing `username` in the response throw
+`upstream_error`. Fixture coverage includes a happy exact lookup, blank username,
+and upstream 500.

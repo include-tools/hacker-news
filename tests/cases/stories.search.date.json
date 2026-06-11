@@ -1,0 +1,36 @@
+{
+  "name": "stories.search can sort by newest-first date",
+  "tool": "stories.search",
+  "args": { "sort": "date", "limit": 1 },
+  "fixtures": [
+    {
+      "pattern": "hn.algolia.com/api/v1/search_by_date",
+      "json": {
+        "hits": [
+          {
+            "objectID": "48496824",
+            "title": "Route public traffic to private applications with Cloudflare",
+            "author": "Spunkie",
+            "created_at": "2026-06-11T21:41:46Z",
+            "points": 5,
+            "num_comments": 1,
+            "_tags": ["story", "author_Spunkie", "story_48496824"]
+          }
+        ],
+        "page": 0,
+        "nbHits": 3655393,
+        "nbPages": 500,
+        "hitsPerPage": 1,
+        "processingTimeMS": 2,
+        "query": "",
+        "params": "tags=story&hitsPerPage=1"
+      }
+    }
+  ],
+  "expect": {
+    "contains": ["\"sort\":\"date\"", "Cloudflare", "\"object_id\":\"48496824\"", "Date(2026-06-11T21:41:46Z)"],
+    "calls": [
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search_by_date" }
+    ]
+  }
+}

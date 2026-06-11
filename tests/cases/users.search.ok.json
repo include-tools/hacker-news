@@ -1,0 +1,17 @@
+{
+  "name": "users.search resolves an Algolia user profile by exact username",
+  "tool": "users.search",
+  "args": { "username": "pg" },
+  "fixtures": [
+    {
+      "pattern": "hn.algolia.com/api/v1/users/pg",
+      "json": { "username": "pg", "about": "Bug fixer.", "karma": 157316 }
+    }
+  ],
+  "expect": {
+    "contains": ["\"username\":\"pg\"", "\"about\":\"Bug fixer.\"", "\"karma\":157316"],
+    "calls": [
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/users/pg" }
+    ]
+  }
+}

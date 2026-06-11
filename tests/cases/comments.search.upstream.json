@@ -1,0 +1,18 @@
+{
+  "name": "comments.search surfaces Algolia validation responses as upstream errors",
+  "tool": "comments.search",
+  "args": { "query": "bar", "limit": 1 },
+  "fixtures": [
+    {
+      "pattern": "hn.algolia.com/api/v1/search",
+      "status": 400,
+      "json": { "code": 400, "message": "Invalid syntax for numeric condition" }
+    }
+  ],
+  "expect": {
+    "errorContains": "upstream_error",
+    "calls": [
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search" }
+    ]
+  }
+}

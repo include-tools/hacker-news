@@ -1,0 +1,26 @@
+{
+  "name": "stories.search returns empty Algolia result pages",
+  "tool": "stories.search",
+  "args": { "query": "nohits", "limit": 2 },
+  "fixtures": [
+    {
+      "pattern": "hn.algolia.com/api/v1/search",
+      "json": {
+        "hits": [],
+        "page": 0,
+        "nbHits": 0,
+        "nbPages": 0,
+        "hitsPerPage": 2,
+        "processingTimeMS": 1,
+        "query": "nohits",
+        "params": "query=nohits&tags=story&hitsPerPage=2"
+      }
+    }
+  ],
+  "expect": {
+    "contains": ["\"hits\":[]", "\"hits_returned\":0", "\"nb_hits\":0", "\"nb_pages\":0"],
+    "calls": [
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search" }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "comments.search rejects invalid story ids before calling upstream",
+  "tool": "comments.search",
+  "args": { "query": "bar", "story_id": 0 },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}

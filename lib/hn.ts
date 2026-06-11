@@ -3,6 +3,7 @@
 // accounting shared by every fan-out tool. Never copied per entry file.
 
 const BASE = "https://hacker-news.firebaseio.com";
+const ALGOLIA_BASE = "https://hn.algolia.com";
 
 export type ItemType =
   | "story"
@@ -54,6 +55,225 @@ export async function fetchJson(path: string): Promise<any> {
   } catch {
     throw err("upstream_error", "Hacker News API returned a non-JSON body");
   }
+}
+
+export type SearchSort = "relevance" | "date";
+
+export interface AlgoliaSearchHit {
+  object_id: string;
+  item_id?: number;
+  tags: string[];
+  author?: string;
+  created_at?: Date;
+  updated_at?: Date;
+  title?: string;
+  url?: string;
+  story_text?: string;
+  comment_text?: string;
+  story_id?: number;
+  story_title?: string;
+  story_url?: string;
+  parent_id?: number;
+  points?: number;
+  num_comments?: number;
+}
+
+export interface AlgoliaSearchResult {
+  sort: SearchSort;
+  requested_filters: {
+    query?: string;
+    tags: string[];
+    numeric_filters: string[];
+    page: number;
+    hits_per_page: number;
+  };
+  actual_counts: {
+    hits_returned: number;
+    nb_hits: number;
+    nb_pages: number;
+    page: number;
+    hits_per_page: number;
+    processing_time_ms?: number;
+  };
+  hits: AlgoliaSearchHit[];
+}
+
+interface AlgoliaSearchRequest {
+  query?: string;
+  sort: SearchSort;
+  tags: string[];
+  numericFilters: string[];
+  page: number;
+  hitsPerPage: number;
+}
+
+export function validateSearchSort(sort: string | undefined): SearchSort {
+  const value = sort ?? "relevance";
+  if (value !== "relevance" && value !== "date") {
+    throw err("validation_error", "sort must be relevance or date");
+  }
+  return value;
+}
+
+export function validateSearchLimit(limit: number | undefined): number {
+  const value = limit ?? 10;
+  if (!Number.isInteger(value) || value < 1 || value > 50) {
+    throw err("validation_error", "limit must be an integer between 1 and 50");
+  }
+  return value;
+}
+
+export function validateSearchPage(page: number | undefined): number {
+  const value = page ?? 0;
+  if (!Number.isInteger(value) || value < 0) {
+    throw err("validation_error", "page must be a non-negative integer");
+  }
+  return value;
+}
+
+export function normalizeOptionalQuery(query: string | undefined): string | undefined {
+  if (query === undefined) return undefined;
+  if (typeof query !== "string") {
+    throw err("validation_error", "query must be a string");
+  }
+  const trimmed = query.trim();
+  return trimmed === "" ? undefined : trimmed;
+}
+
+export function validateTagUsername(username: string | undefined): string | undefined {
+  if (username === undefined) return undefined;
+  if (typeof username !== "string" || !/^[A-Za-z0-9_-]+$/.test(username)) {
+    throw err(
+      "validation_error",
+      "author must contain only letters, numbers, underscores, or hyphens",
+    );
+  }
+  return username;
+}
+
+export function addCreatedAtFilters(
+  numericFilters: string[],
+  since: number | undefined,
+  until: number | undefined,
+): void {
+  if (since !== undefined && (!Number.isInteger(since) || since < 0)) {
+    throw err("validation_error", "since must be a non-negative Unix timestamp");
+  }
+  if (until !== undefined && (!Number.isInteger(until) || until < 0)) {
+    throw err("validation_error", "until must be a non-negative Unix timestamp");
+  }
+  if (since !== undefined && until !== undefined && since > until) {
+    throw err("validation_error", "since must be less than or equal to until");
+  }
+  if (since !== undefined) numericFilters.push(`created_at_i>=${since}`);
+  if (until !== undefined) numericFilters.push(`created_at_i<=${until}`);
+}
+
+export function addMinNumericFilter(
+  numericFilters: string[],
+  field: "points" | "num_comments",
+  value: number | undefined,
+): void {
+  if (value === undefined) return;
+  if (!Number.isInteger(value) || value < 0) {
+    throw err("validation_error", `${field} minimum must be a non-negative integer`);
+  }
+  numericFilters.push(`${field}>=${value}`);
+}
+
+/**
+ * Issue a single unauthenticated Algolia HN Search API request.
+ * Non-2xx responses are mapped to the shared upstream_error taxonomy, appending
+ * the upstream message/error field when the body is JSON.
+ */
+export async function fetchAlgoliaJson(path: string): Promise<any> {
+  const resp = await fetch(`${ALGOLIA_BASE}${path}`);
+  const text = await resp.text();
+  if (resp.status < 200 || resp.status >= 300) {
+    let detail = `Algolia HN Search API returned ${resp.status}`;
+    try {
+      const parsed = JSON.parse(text);
+      const message = parsed.message ?? parsed.error;
+      if (typeof message === "string" && message !== "") {
+        detail += `: ${message}`;
+      }
+    } catch {
+      // HTML/non-JSON error bodies are common enough to leave as status-only.
+    }
+    throw err("upstream_error", detail);
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw err("upstream_error", "Algolia HN Search API returned a non-JSON body");
+  }
+}
+
+/** Search `/api/v1/search` or `/api/v1/search_by_date` with bounded output. */
+export async function searchAlgolia(req: AlgoliaSearchRequest): Promise<AlgoliaSearchResult> {
+  const endpoint = req.sort === "date" ? "/api/v1/search_by_date" : "/api/v1/search";
+  const params: string[] = [];
+  const addParam = (key: string, value: string): void => {
+    params.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+  };
+  if (req.query !== undefined) addParam("query", req.query);
+  addParam("tags", req.tags.join(","));
+  if (req.numericFilters.length > 0) {
+    addParam("numericFilters", req.numericFilters.join(","));
+  }
+  addParam("page", String(req.page));
+  addParam("hitsPerPage", String(req.hitsPerPage));
+
+  const raw = await fetchAlgoliaJson(`${endpoint}?${params.join("&")}`);
+  if (raw === null || typeof raw !== "object" || !Array.isArray(raw.hits)) {
+    throw err("upstream_error", "expected an Algolia search result object");
+  }
+  const result: AlgoliaSearchResult = {
+    sort: req.sort,
+    requested_filters: {
+      tags: req.tags,
+      numeric_filters: req.numericFilters,
+      page: req.page,
+      hits_per_page: req.hitsPerPage,
+    },
+    actual_counts: {
+      hits_returned: raw.hits.length,
+      nb_hits: typeof raw.nbHits === "number" ? raw.nbHits : raw.hits.length,
+      nb_pages: typeof raw.nbPages === "number" ? raw.nbPages : 0,
+      page: typeof raw.page === "number" ? raw.page : req.page,
+      hits_per_page: typeof raw.hitsPerPage === "number" ? raw.hitsPerPage : req.hitsPerPage,
+    },
+    hits: raw.hits.map(normalizeAlgoliaHit),
+  };
+  if (req.query !== undefined) result.requested_filters.query = req.query;
+  if (typeof raw.processingTimeMS === "number") {
+    result.actual_counts.processing_time_ms = raw.processingTimeMS;
+  }
+  return result;
+}
+
+function normalizeAlgoliaHit(raw: any): AlgoliaSearchHit {
+  const objectId = String(raw.objectID ?? raw.id ?? "");
+  const hit: AlgoliaSearchHit = {
+    object_id: objectId,
+    tags: Array.isArray(raw._tags) ? raw._tags.filter((tag: any) => typeof tag === "string") : [],
+  };
+  const itemId = Number(objectId);
+  if (Number.isInteger(itemId) && itemId > 0) hit.item_id = itemId;
+  if (typeof raw.author === "string") hit.author = raw.author;
+  if (typeof raw.created_at === "string") hit.created_at = new Date(raw.created_at);
+  if (typeof raw.updated_at === "string") hit.updated_at = new Date(raw.updated_at);
+  if (typeof raw.title === "string") hit.title = raw.title;
+  if (typeof raw.url === "string") hit.url = raw.url;
+  if (typeof raw.story_text === "string") hit.story_text = raw.story_text;
+  if (typeof raw.comment_text === "string") hit.comment_text = raw.comment_text;
+  if (typeof raw.story_id === "number") hit.story_id = raw.story_id;
+  if (typeof raw.story_title === "string") hit.story_title = raw.story_title;
+  if (typeof raw.story_url === "string") hit.story_url = raw.story_url;
+  if (typeof raw.parent_id === "number") hit.parent_id = raw.parent_id;
+  if (typeof raw.points === "number") hit.points = raw.points;
+  if (typeof raw.num_comments === "number") hit.num_comments = raw.num_comments;
+  return hit;
 }
 
 /** Project an upstream item object into the canonical normalized `Item`. */

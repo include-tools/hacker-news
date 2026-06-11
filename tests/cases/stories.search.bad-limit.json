@@ -1,0 +1,10 @@
+{
+  "name": "stories.search rejects unbounded limits before calling upstream",
+  "tool": "stories.search",
+  "args": { "query": "foo", "limit": 500 },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}

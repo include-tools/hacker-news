@@ -1,0 +1,46 @@
+{
+  "name": "stories.search returns bounded Algolia story hits",
+  "tool": "stories.search",
+  "args": { "query": "foo", "limit": 2 },
+  "fixtures": [
+    {
+      "pattern": "hn.algolia.com/api/v1/search",
+      "json": {
+        "hits": [
+          {
+            "objectID": "14568468",
+            "title": "Amazon to Acquire Whole Foods for $13.7B",
+            "url": "https://example.com/whole-foods",
+            "author": "whatok",
+            "points": 1687,
+            "num_comments": 824,
+            "story_id": 14568468,
+            "created_at": "2017-06-16T13:03:09Z",
+            "updated_at": "2026-05-10T00:05:06Z",
+            "_tags": ["story", "author_whatok", "story_14568468"],
+            "children": [1, 2, 3]
+          }
+        ],
+        "page": 0,
+        "nbHits": 1,
+        "nbPages": 1,
+        "hitsPerPage": 2,
+        "processingTimeMS": 3,
+        "query": "foo",
+        "params": "query=foo&tags=story&hitsPerPage=2"
+      }
+    }
+  ],
+  "expect": {
+    "contains": [
+      "Whole Foods",
+      "\"object_id\":\"14568468\"",
+      "\"story_14568468\"",
+      "\"hits_returned\":1",
+      "Date(2017-06-16T13:03:09Z)"
+    ],
+    "calls": [
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search" }
+    ]
+  }
+}

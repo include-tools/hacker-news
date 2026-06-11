@@ -1,0 +1,17 @@
+{
+  "name": "stories.search surfaces Algolia upstream errors",
+  "tool": "stories.search",
+  "args": { "query": "foo", "limit": 2 },
+  "fixtures": [
+    {
+      "pattern": "hn.algolia.com/api/v1/search",
+      "status": 500
+    }
+  ],
+  "expect": {
+    "errorContains": "upstream_error",
+    "calls": [
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search" }
+    ]
+  }
+}

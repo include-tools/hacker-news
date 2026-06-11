@@ -1,81 +1,65 @@
 # Hacker News — agent use cases
 
-Each use case below maps only to capabilities documented in
-`service-research.md` (the read-only Firebase JSON API). None depend on search,
-writes, webhooks, or any feature this API does not provide.
+Each use case maps to endpoints documented in `docs/service-research.md`: the
+official Firebase API and the public Algolia HN Search API.
 
-## 1. Summarize the current front page
+## 1. Summarize current HN feeds
 
-Fetch a ranked id list (`/v0/topstories.json`, `/v0/beststories.json`, or
-`/v0/newstories.json`), take the first N ids, resolve each via
-`/v0/item/{id}.json`, and produce a digest of titles, links, scores, and comment
-counts (`descendants`). Foundational "what's on HN right now" task.
+Fetch a ranked Firebase id list (`/v0/topstories.json`, `/v0/beststories.json`,
+`/v0/newstories.json`, `/v0/askstories.json`, `/v0/showstories.json`, or
+`/v0/jobstories.json`), hydrate selected ids with `/v0/item/{id}.json`, and
+summarize titles, URLs, authors, scores, and comment counts.
 
-- **Uses:** topstories/beststories/newstories lists + item endpoint.
+## 2. Search stories by topic, author, date, or front-page status
 
-## 2. Track Show HN, Ask HN, or job postings
+Use Algolia `/api/v1/search` for relevance-ranked story searches, or
+`/api/v1/search_by_date` for newest-first results. Apply documented `query`,
+`tags` (`story`, `ask_hn`, `show_hn`, `front_page`, `author_:USERNAME`), and
+`numericFilters` (`created_at_i`, `points`, `num_comments`) to find matching
+stories.
 
-Same pattern as #1 but against the category lists `/v0/showstories.json`,
-`/v0/askstories.json`, or `/v0/jobstories.json` (up to 200 ids each) — e.g. a
-daily "new Show HN projects" or "latest HN job postings" feed.
+## 3. Search comments and discussion history
 
-- **Uses:** ask/show/job story lists + item endpoint.
+Use Algolia search with `tags=comment`, optionally combined with
+`story_:ID`, `author_:USERNAME`, and `created_at_i` numeric filters, to find
+comments matching a phrase, comments by a user, comments under a specific story,
+or recent comments in a time window.
 
-## 3. Expand a single item by id (deep-link / lookup)
+## 4. Resolve a single HN item by id
 
-Given an HN item id (from a URL or another tool), fetch `/v0/item/{id}.json` and
-return its normalized fields (title, author, time, url/text, score). Handles the
-`null` body as "not found."
+Fetch `/v0/item/{id}.json` for the canonical Firebase item shape, or
+`/api/v1/items/{id}` when an Algolia-style item with recursively embedded
+children is useful. Treat Firebase `null` and Algolia 404 as missing resources.
 
-- **Uses:** item endpoint.
+## 5. Build a bounded story and comment-thread report
 
-## 4. Build a story + comment-thread report
+Fetch a Firebase story item, then recursively fetch its `kids` with
+`/v0/item/{id}.json` to reconstruct a bounded discussion tree. Use
+`descendants` for total comment count and `kids` for direct child traversal.
 
-Fetch a story item, then walk its `kids` ids recursively via repeated
-`/v0/item/{id}.json` calls (skipping `deleted`/`dead`) to reconstruct the
-discussion, optionally bounded by depth/breadth. Useful for summarizing the
-conversation under a post.
+## 6. Profile or verify a user
 
-- **Uses:** item endpoint (`kids` traversal); `descendants` for total size.
+Use Firebase `/v0/user/{id}.json` for account creation time, karma, bio, and the
+`submitted` item id list. Use Algolia `/api/v1/users/{username}` for exact
+username lookup with Algolia's `username`, `about`, and `karma` shape.
 
-## 5. Profile a user
+## 7. Poll for changed or newly created content
 
-Fetch `/v0/user/{id}.json` to report karma, account age (`created`), bio
-(`about`), and submission count, and optionally resolve recent ids from
-`submitted` into actual items to show what they post about.
+Read Firebase `/v0/updates.json` to learn recently changed item ids and profiles,
+then re-fetch just those resources. Alternatively read `/v0/maxitem.json` and
+walk item ids downward to discover newest items of any type.
 
-- **Uses:** user endpoint + item endpoint.
+## 8. Compute lightweight analytics from fetched or searched results
 
-## 6. Poll for new/changed content (lightweight change feed)
+Use Firebase feed/item results or Algolia search hits to compute client-side
+summaries such as top domains, score distributions, most-commented results, or
+topic-specific activity over time. The APIs provide raw items/search hits, not
+precomputed analytics endpoints.
 
-Periodically read `/v0/updates.json` to learn which item ids and profiles changed
-since the last poll, then re-fetch just those resources — an efficient monitor
-that avoids re-scanning whole lists. Alternatively count down from
-`/v0/maxitem.json` to discover brand-new items.
+## Out of scope
 
-- **Uses:** updates endpoint, maxitem endpoint, item/user endpoints.
-
-## 7. Topic / keyword monitoring (client-side filter)
-
-Since the API has no search, poll `newstories.json` (or `updates.json`), fetch
-the items, and filter client-side on title/text/url for keywords or domains of
-interest — surfacing matching stories as they appear.
-
-- **Uses:** newstories/updates + item endpoint (filtering done by the agent, not
-  the API).
-
-## 8. Lightweight analytics over a fetched set
-
-Pull a list (e.g. top 100 stories), fetch the items, and compute client-side
-aggregates: score distribution, most-active domains (from `url`), comment-count
-(`descendants`) leaders, or posting-time patterns (`time`). All computation is
-agent-side; the API only supplies the raw items.
-
-- **Uses:** story lists + item endpoint.
-
-## Out of scope (not supported by the API)
-
-- Posting, commenting, voting, flagging, or editing — the API is read-only.
-- Server-side search, sorting, or filtering — must be done client-side.
-- Batch item fetch, pagination cursors, or webhooks — fetch ids individually and
-  poll `/v0/updates.json` for changes.
+- Posting, commenting, voting, flagging, favoriting, or editing.
+- Authenticated/private HN data.
+- Webhooks.
+- Firebase server-side search or batch item fetch.
+- Algolia full-text user search; the documented user endpoint is exact lookup.

@@ -1,0 +1,14 @@
+{
+  "name": "users.search surfaces Algolia user lookup upstream errors",
+  "tool": "users.search",
+  "args": { "username": "ghost" },
+  "fixtures": [
+    { "pattern": "hn.algolia.com/api/v1/users/ghost", "status": 500 }
+  ],
+  "expect": {
+    "errorContains": "upstream_error",
+    "calls": [
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/users/ghost" }
+    ]
+  }
+}

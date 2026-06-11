@@ -1,0 +1,10 @@
+{
+  "name": "users.search rejects blank usernames before calling upstream",
+  "tool": "users.search",
+  "args": { "username": "   " },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}
