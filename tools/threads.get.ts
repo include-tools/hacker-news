@@ -83,7 +83,8 @@ export default async function tool(
   let failedFetch = 0;
   let cyclesSkipped = 0;
   let maxDepthReached = 0;
-  let depthBoundaryTruncation = false;
+  // max_depth=0 never seeds the root's kids, so flag them as beyond-depth here.
+  let depthBoundaryTruncation = depthBound < 1 && rootKids.length > 0;
 
   while (queue.length > 0 && nodesFetched < nodeBudget) {
     const entry = queue.shift()!;
