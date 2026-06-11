@@ -1,0 +1,27 @@
+{
+  "name": "items.get returns a story with kid count",
+  "tool": "items.get",
+  "args": { "id": 8863 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/8863.json",
+      "json": {
+        "id": 8863,
+        "type": "story",
+        "by": "dhouston",
+        "time": 1175714200,
+        "title": "My YC app: Dropbox - Throw away your USB drive",
+        "url": "http://www.getdropbox.com/u/2/screencast.html",
+        "score": 111,
+        "descendants": 71,
+        "kids": [9224, 8917, 8952]
+      }
+    }
+  ],
+  "expect": {
+    "contains": ["Dropbox", "dhouston", "kids_count"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/8863.json" }
+    ]
+  }
+}

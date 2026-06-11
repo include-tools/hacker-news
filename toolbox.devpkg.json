@@ -2,6 +2,9 @@
   "module": "github.com/include-tools/hacker-news",
   "name": "hacker-news",
   "runtime": "typescript-sandbox",
-  "allowed_hosts": [],
-  "tools": []
+  "allowed_hosts": ["hacker-news.firebaseio.com"],
+  "tools": [
+    { "entry_ts": "tools/items.get.ts" },
+    { "entry_ts": "tools/stories.list.ts" }
+  ]
 }

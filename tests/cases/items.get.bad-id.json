@@ -1,0 +1,10 @@
+{
+  "name": "items.get rejects non-positive ids without calling upstream",
+  "tool": "items.get",
+  "args": { "id": -4 },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}

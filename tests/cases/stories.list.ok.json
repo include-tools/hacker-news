@@ -1,0 +1,27 @@
+{
+  "name": "stories.list returns bounded top stories in order",
+  "tool": "stories.list",
+  "args": { "kind": "top", "limit": 2 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/topstories.json",
+      "json": [101, 102, 103, 104]
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/101.json",
+      "json": { "id": 101, "type": "story", "title": "Story One", "by": "alice", "score": 50, "descendants": 7 }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/102.json",
+      "json": { "id": 102, "type": "story", "title": "Story Two", "by": "bob", "score": 40, "descendants": 3 }
+    }
+  ],
+  "expect": {
+    "contains": ["Story One", "Story Two", "truncated"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/topstories.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/101.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/102.json" }
+    ]
+  }
+}

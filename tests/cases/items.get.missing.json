@@ -1,0 +1,14 @@
+{
+  "name": "items.get reports not_found for null items",
+  "tool": "items.get",
+  "args": { "id": 999999999 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/999999999.json",
+      "json": "null"
+    }
+  ],
+  "expect": {
+    "errorContains": "not_found"
+  }
+}

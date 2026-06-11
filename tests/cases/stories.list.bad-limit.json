@@ -1,0 +1,10 @@
+{
+  "name": "stories.list enforces the hard limit bound",
+  "tool": "stories.list",
+  "args": { "limit": 500 },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}
