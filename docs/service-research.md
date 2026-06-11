@@ -82,7 +82,7 @@ Documented fields:
 - `created` integer: Unix time in seconds.
 - `karma` integer.
 - `about` string: optional HTML profile text.
-- `submitted` array of integers: submitted item ids, newest first.
+- `submitted` array of integers: the user's stories, polls, and comments.
 
 ### Firebase max item — `GET /v0/maxitem.json`
 

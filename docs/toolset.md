@@ -58,8 +58,8 @@ separate Algolia search index:
   only when applicable (HN omits empty/false fields). `kids` holds direct child
   comment ids in ranked display order; full threads require recursive fetches.
 - **User** — a profile keyed by a **case-sensitive** username string. Carries
-  `karma`, `created`, optional `about`, and a `submitted` id list (newest first,
-  can be thousands long).
+  `karma`, `created`, optional `about`, and a `submitted` id list of the user's
+  stories, polls, and comments (can be thousands long).
 - **Ranked feeds** — `top`, `new`, `best`, `ask`, `show`, `job`: bare arrays of
   item ids in ranked order (≤500 for top/new/best, ≤200 for ask/show/job).
 - **maxitem** — the current largest item id (a bare integer); walking ids
@@ -242,7 +242,7 @@ not a deferred feature:
 | `stories.search` | Search HN stories via Algolia (#2) | Algolia `search` / `search_by_date` | readOnly | 1 |
 | `comments.search` | Search HN comments via Algolia (#3) | Algolia `search` / `search_by_date` | readOnly | 1 |
 | `threads.get` | Story + comment-thread report (#5) | `item/{id}` (root + recursive comments) | readOnly | 1 + max_nodes (≤ 201) |
-| `users.get` | Profile a user; optional recent submissions (#6) | `user/{name}` + `item/{id}`×N | readOnly | 1 + include_recent (≤ 31) |
+| `users.get` | Profile a user; optional submitted-item sample (#6) | `user/{name}` + `item/{id}`×N | readOnly | 1 + include_recent (≤ 31) |
 | `users.search` | Exact Algolia user lookup (#6) | Algolia `users/{username}` | readOnly | 1 |
 | `updates.get` | Lightweight change feed (#7) | `updates` | readOnly | 1 |
 | `items.recent` | Discover brand-new items via count-down (#7) | `maxitem` + `item/{id}`×N | readOnly | 1 + 2·limit (≤ 61) |
@@ -574,12 +574,12 @@ are preserved.
 ### users.get
 
 **Purpose.** Resolve a Hacker News user profile by username and, optionally,
-hydrate their most-recent submissions into items so the agent can see *what* they
-post. Covers profiling a user (use case #6).
+hydrate a bounded sample from their `submitted` ids into items so the agent can
+see *what* they post. Covers profiling a user (use case #6).
 
 **Use when** the agent has a username (from a story/comment `by`, from
 `updates.get` `profiles`, or supplied directly) and wants karma, account age,
-bio, and/or a sample of recent activity.
+bio, and/or a sample of submitted items.
 
 **Do not use when** you have an item id rather than a username (`items.get`) or
 want feed-wide activity (`stories.list`). The full `submitted` list (potentially
@@ -612,7 +612,7 @@ interface UserResult {
     skipped_null: number;
     failed_fetch: number;
   };
-  recent_submissions: Item[];  // canonical Items, newest-first; [] when include_recent = 0
+  recent_submissions: Item[];  // canonical Items in upstream `submitted` order; [] when include_recent = 0
 }
 ```
 
@@ -620,9 +620,10 @@ interface UserResult {
   skipped_deleted_or_dead + skipped_null + failed_fetch`. The profile fetch is
   **not** counted (it is the root). `submitted_count` reflects the **whole**
   upstream list even though at most `include_recent` ids are ever fetched.
-- **Ordering:** `recent_submissions` follows `submitted` order, which HN
-  documents as newest-first; the first `include_recent` ids are taken and
-  hydrated in that order.
+- **Ordering:** `recent_submissions` follows upstream `submitted` array order.
+  HN documents the field as the user's stories, polls, and comments, but does
+  not document an ordering guarantee. The first `include_recent` ids are taken
+  and hydrated in the order returned.
 - **Max items:** `recent_submissions.length <= include_recent <= 30`.
 - **Shape:** each entry is the full canonical [`Item`](#canonical-normalized-item)
   (so comment submissions carry `text`/`parent`, story submissions carry

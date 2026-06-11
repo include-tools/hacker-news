@@ -17,7 +17,7 @@ A [toolbox](https://github.com/solidarity-ai/toolbox) package.
 | "Find comments mentioning this bug under story 123" | `comments.search` |
 | A daily Show HN / Ask HN / who's-hiring feed | `stories.list` (`kind: "show" / "ask" / "job"`) |
 | "Summarize the discussion under this post" | `threads.get` — bounded comment-tree walk |
-| "Who is this user and what do they post about?" | `users.get` — karma, account age, recent submissions hydrated |
+| "Who is this user and what do they post about?" | `users.get` — karma, account age, submitted-item sample hydrated |
 | "Verify this username in Algolia's index" | `users.search` |
 | Watch for newly created items | `items.recent` |
 | A cheap change feed for dashboards and caches | `updates.get` |
@@ -47,7 +47,7 @@ interesting comment threads."*
 | `comments.search` | Algolia comment search by query, story, author, and time window | `limit` ≤ 50, `page` |
 | `items.get` | One item (story/comment/job/poll) by id, normalized | single fetch |
 | `threads.get` | Comment tree under a story, breadth-first with cycle safety | max depth + node budget |
-| `users.get` | Profile + optionally hydrated recent submissions | submission hydration capped |
+| `users.get` | Profile + optionally hydrated submitted-item sample | submission hydration capped |
 | `users.search` | Exact Algolia user profile lookup | single fetch |
 | `items.recent` | Newest items walked back from `maxitem` | fetch budget |
 | `updates.get` | HN's changed-items/profiles feed | single fetch |

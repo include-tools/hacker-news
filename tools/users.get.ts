@@ -22,14 +22,14 @@ interface UserResult {
     skipped_null: number;
     failed_fetch: number;
   };
-  recent_submissions: Item[]; // canonical Items, newest-first; [] when include_recent = 0
+  recent_submissions: Item[]; // canonical Items in upstream `submitted` order; [] when include_recent = 0
 }
 
 /**
  * Resolve a Hacker News user profile by (case-sensitive) username and,
- * optionally, hydrate their most-recent submissions into items. The full
- * `submitted` list (potentially thousands of ids) is never returned — only its
- * length (`submitted_count`) and up to `include_recent` hydrated records.
+ * optionally, hydrate a bounded sample from their `submitted` ids into items.
+ * The full `submitted` list (potentially thousands of ids) is never returned —
+ * only its length (`submitted_count`) and up to `include_recent` hydrated records.
  * @effect readOnly
  */
 export default async function tool(
