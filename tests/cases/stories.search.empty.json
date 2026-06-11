@@ -20,7 +20,7 @@
   "expect": {
     "contains": ["\"hits\":[]", "\"hits_returned\":0", "\"nb_hits\":0", "\"nb_pages\":0"],
     "calls": [
-      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search" }
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search", "headers": { "Authorization": "" } }
     ]
   }
 }

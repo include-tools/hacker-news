@@ -172,6 +172,9 @@ Query parameters documented by the HN Search API page:
 - `page` integer: page number.
 - `hitsPerPage` integer: mentioned by the docs as a request argument and
   returned in responses.
+- `restrictSearchableAttributes` string: Algolia search parameter shown by the
+  HN Search docs for URL-only search, for example
+  `restrictSearchableAttributes=url`.
 
 Tag semantics: tags are ANDed by default. Parentheses can OR tags, for example
 `author_pg,(story,poll)` means author `pg` and type story or poll.

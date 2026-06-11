@@ -12,7 +12,7 @@
   "expect": {
     "errorContains": "upstream_error",
     "calls": [
-      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search" }
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search", "headers": { "Authorization": "" } }
     ]
   }
 }

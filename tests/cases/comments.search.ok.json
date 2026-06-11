@@ -33,7 +33,7 @@
   "expect": {
     "contains": ["barely even notice", "\"story_id\":123", "\"object_id\":\"9999960\"", "Date(2015-08-03T21:27:21Z)"],
     "calls": [
-      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search" }
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search", "headers": { "Authorization": "" } }
     ]
   }
 }

@@ -8,7 +8,7 @@
   "expect": {
     "errorContains": "upstream_error",
     "calls": [
-      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/users/ghost" }
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/users/ghost", "headers": { "Authorization": "" } }
     ]
   }
 }

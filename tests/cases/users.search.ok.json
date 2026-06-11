@@ -11,7 +11,7 @@
   "expect": {
     "contains": ["\"username\":\"pg\"", "\"about\":\"Bug fixer.\"", "\"karma\":157316"],
     "calls": [
-      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/users/pg" }
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/users/pg", "headers": { "Authorization": "" } }
     ]
   }
 }

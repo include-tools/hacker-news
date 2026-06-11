@@ -40,7 +40,7 @@
       "Date(2017-06-16T13:03:09Z)"
     ],
     "calls": [
-      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search" }
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search", "headers": { "Authorization": "" } }
     ]
   }
 }

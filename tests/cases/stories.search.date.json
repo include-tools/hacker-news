@@ -30,7 +30,7 @@
   "expect": {
     "contains": ["\"sort\":\"date\"", "Cloudflare", "\"object_id\":\"48496824\"", "Date(2026-06-11T21:41:46Z)"],
     "calls": [
-      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search_by_date" }
+      { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search_by_date", "headers": { "Authorization": "" } }
     ]
   }
 }
