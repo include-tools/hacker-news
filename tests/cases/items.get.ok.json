@@ -19,7 +19,7 @@
     }
   ],
   "expect": {
-    "contains": ["Dropbox", "dhouston", "kids_count"],
+    "contains": ["Dropbox", "dhouston", "kids_count", "Date(2007-04-04T19:16:40Z)"],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/8863.json" }
     ]

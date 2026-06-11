@@ -3,6 +3,7 @@ interface HNItem {
   type: string;
   by?: string;
   time?: number;
+  posted_at?: Date;
   title?: string;
   url?: string;
   text?: string;
@@ -35,6 +36,7 @@ export default async function tool(id: number): Promise<HNItem> {
     type: data.type ?? "unknown",
     by: data.by,
     time: data.time,
+    posted_at: typeof data.time === "number" ? new Date(data.time * 1000) : undefined,
     title: data.title,
     url: data.url,
     text: data.text,
