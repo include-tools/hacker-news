@@ -1,0 +1,7 @@
+{
+  "module": "github.com/include-tools/hacker-news",
+  "name": "hacker-news",
+  "runtime": "typescript-sandbox",
+  "allowed_hosts": [],
+  "tools": []
+}
