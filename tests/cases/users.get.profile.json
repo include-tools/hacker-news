@@ -1,0 +1,17 @@
+{
+  "name": "users.get returns a profile only by default (no hydration)",
+  "tool": "users.get",
+  "args": { "username": "jl" },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/user/jl.json",
+      "json": { "id": "jl", "created": 1173923446, "karma": 4500, "about": "hi there", "submitted": [1, 2, 3, 4] }
+    }
+  ],
+  "expect": {
+    "contains": ["\"id\":\"jl\"", "\"karma\":4500", "\"submitted_count\":4", "\"recent_submissions\":[]", "Date("],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/user/jl.json" }
+    ]
+  }
+}

@@ -3,8 +3,13 @@
   "name": "hacker-news",
   "runtime": "typescript-sandbox",
   "allowed_hosts": ["hacker-news.firebaseio.com"],
+  "additionalTypeScriptGlobs": ["lib/**/*.ts"],
   "tools": [
     { "entry_ts": "tools/items.get.ts" },
-    { "entry_ts": "tools/stories.list.ts" }
+    { "entry_ts": "tools/stories.list.ts" },
+    { "entry_ts": "tools/threads.get.ts" },
+    { "entry_ts": "tools/users.get.ts" },
+    { "entry_ts": "tools/updates.get.ts" },
+    { "entry_ts": "tools/items.recent.ts" }
   ]
 }

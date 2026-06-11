@@ -1,0 +1,17 @@
+{
+  "name": "updates.get returns empty arrays when nothing changed",
+  "tool": "updates.get",
+  "args": {},
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/updates.json",
+      "json": { "items": [], "profiles": [] }
+    }
+  ],
+  "expect": {
+    "contains": ["\"item_ids\":[]", "\"profiles\":[]", "\"item_ids\":0", "\"profiles\":0"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/updates.json" }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "threads.get rejects an out-of-range max_nodes without calling upstream",
+  "tool": "threads.get",
+  "args": { "root_id": 1, "max_nodes": 9999 },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}

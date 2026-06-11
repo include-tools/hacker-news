@@ -1,0 +1,27 @@
+{
+  "name": "threads.get stops at the node budget and flags truncation",
+  "tool": "threads.get",
+  "args": { "root_id": 1, "max_nodes": 2 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/1.json",
+      "json": { "id": 1, "type": "story", "title": "Big", "kids": [2, 3, 4, 5, 6] }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/2.json",
+      "json": { "id": 2, "type": "comment", "by": "a", "text": "c2", "kids": [20] }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/3.json",
+      "json": { "id": 3, "type": "comment", "by": "b", "text": "c3", "kids": [30] }
+    }
+  ],
+  "expect": {
+    "contains": ["\"nodes_fetched\":2", "\"truncated\":true", "\"kids_count\":1"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/1.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/2.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/3.json" }
+    ]
+  }
+}

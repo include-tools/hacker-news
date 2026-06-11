@@ -1,0 +1,27 @@
+{
+  "name": "items.get returns a poll with part ids and descendants",
+  "tool": "items.get",
+  "args": { "id": 126809 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/126809.json",
+      "json": {
+        "id": 126809,
+        "type": "poll",
+        "by": "pg",
+        "time": 1204403652,
+        "title": "Poll: What would happen if News.YC had no comments?",
+        "score": 46,
+        "descendants": 54,
+        "parts": [126810, 126811, 126812],
+        "kids": [126822]
+      }
+    }
+  ],
+  "expect": {
+    "contains": ["\"type\":\"poll\"", "\"part_ids\":[126810,126811,126812]", "\"descendants\":54"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/126809.json" }
+    ]
+  }
+}

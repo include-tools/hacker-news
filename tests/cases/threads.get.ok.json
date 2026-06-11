@@ -1,0 +1,32 @@
+{
+  "name": "threads.get builds a bounded nested comment tree in BFS order",
+  "tool": "threads.get",
+  "args": { "root_id": 1, "max_depth": 2, "max_nodes": 10 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/1.json",
+      "json": { "id": 1, "type": "story", "title": "Root", "by": "op", "time": 1175714200, "descendants": 3, "kids": [2, 3] }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/2.json",
+      "json": { "id": 2, "type": "comment", "by": "u2", "text": "first", "kids": [4] }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/3.json",
+      "json": { "id": 3, "type": "comment", "by": "u3", "text": "second" }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/4.json",
+      "json": { "id": 4, "type": "comment", "by": "u4", "text": "reply" }
+    }
+  ],
+  "expect": {
+    "contains": ["\"nodes_fetched\":3", "\"truncated\":false", "\"depth\":1", "\"depth\":2", "first", "reply", "\"max_depth_reached\":2"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/1.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/2.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/3.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/4.json" }
+    ]
+  }
+}

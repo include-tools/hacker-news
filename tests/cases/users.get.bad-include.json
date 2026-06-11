@@ -1,0 +1,10 @@
+{
+  "name": "users.get rejects an out-of-range include_recent without calling upstream",
+  "tool": "users.get",
+  "args": { "username": "alice", "include_recent": 31 },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "items.get surfaces upstream_error on a non-2xx response",
+  "tool": "items.get",
+  "args": { "id": 8863 },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/item/8863.json", "status": 500 }
+  ],
+  "expect": {
+    "errorContains": "upstream_error",
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/8863.json" }
+    ]
+  }
+}

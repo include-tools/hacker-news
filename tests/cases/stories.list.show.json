@@ -1,0 +1,19 @@
+{
+  "name": "stories.list routes kind=show to the showstories feed",
+  "tool": "stories.list",
+  "args": { "kind": "show", "limit": 1 },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/showstories.json", "json": [201] },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/201.json",
+      "json": { "id": 201, "type": "story", "title": "Show HN: My Thing", "by": "dev", "score": 10, "descendants": 2 }
+    }
+  ],
+  "expect": {
+    "contains": ["Show HN: My Thing", "\"kind\":\"show\"", "\"comments\":2"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/showstories.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/201.json" }
+    ]
+  }
+}

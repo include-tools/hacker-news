@@ -1,0 +1,14 @@
+{
+  "name": "users.get reports not_found for a missing profile",
+  "tool": "users.get",
+  "args": { "username": "ghost" },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/user/ghost.json", "json": "null" }
+  ],
+  "expect": {
+    "errorContains": "not_found",
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/user/ghost.json" }
+    ]
+  }
+}

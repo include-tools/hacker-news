@@ -1,0 +1,27 @@
+{
+  "name": "users.get hydrates the first N submissions in order",
+  "tool": "users.get",
+  "args": { "username": "alice", "include_recent": 2 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/user/alice.json",
+      "json": { "id": "alice", "created": 1300000000, "karma": 10, "submitted": [10, 11, 12] }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/10.json",
+      "json": { "id": 10, "type": "story", "title": "Newest", "by": "alice", "score": 5, "descendants": 0 }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/11.json",
+      "json": { "id": 11, "type": "comment", "by": "alice", "text": "a comment", "parent": 9 }
+    }
+  ],
+  "expect": {
+    "contains": ["Newest", "a comment", "\"submitted_count\":3", "\"submissions_requested\":2", "\"submissions_returned\":2"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/user/alice.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/10.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/11.json" }
+    ]
+  }
+}

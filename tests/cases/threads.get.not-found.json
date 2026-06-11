@@ -1,0 +1,14 @@
+{
+  "name": "threads.get reports not_found for a missing root with one call",
+  "tool": "threads.get",
+  "args": { "root_id": 999 },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/item/999.json", "json": "null" }
+  ],
+  "expect": {
+    "errorContains": "not_found",
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/999.json" }
+    ]
+  }
+}

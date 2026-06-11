@@ -1,0 +1,24 @@
+{
+  "name": "stories.list paginates a feed with offset and limit",
+  "tool": "stories.list",
+  "args": { "kind": "top", "limit": 2, "offset": 2 },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/topstories.json", "json": [301, 302, 303, 304, 305] },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/303.json",
+      "json": { "id": 303, "type": "story", "title": "Third", "by": "c", "score": 3, "descendants": 0 }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/304.json",
+      "json": { "id": 304, "type": "story", "title": "Fourth", "by": "d", "score": 4, "descendants": 1 }
+    }
+  ],
+  "expect": {
+    "contains": ["Third", "Fourth", "\"offset\":2", "\"truncated\":true", "\"feed_ids_available\":5"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/topstories.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/303.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/304.json" }
+    ]
+  }
+}

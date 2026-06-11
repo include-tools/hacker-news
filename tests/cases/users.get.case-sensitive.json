@@ -1,0 +1,17 @@
+{
+  "name": "users.get sends the username verbatim (case-sensitive path)",
+  "tool": "users.get",
+  "args": { "username": "JL" },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/user/JL.json",
+      "json": { "id": "JL", "created": 1173923446, "karma": 1, "submitted": [] }
+    }
+  ],
+  "expect": {
+    "contains": ["\"id\":\"JL\"", "\"submitted_count\":0"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/user/JL.json" }
+    ]
+  }
+}

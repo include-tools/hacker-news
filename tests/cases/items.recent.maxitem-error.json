@@ -1,0 +1,14 @@
+{
+  "name": "items.recent surfaces upstream_error when maxitem fails before any item fetch",
+  "tool": "items.recent",
+  "args": { "limit": 2 },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/maxitem.json", "status": 500 }
+  ],
+  "expect": {
+    "errorContains": "upstream_error",
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/maxitem.json" }
+    ]
+  }
+}

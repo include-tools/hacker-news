@@ -1,0 +1,25 @@
+{
+  "name": "items.get returns a comment with parent and text",
+  "tool": "items.get",
+  "args": { "id": 2921983 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/2921983.json",
+      "json": {
+        "id": 2921983,
+        "type": "comment",
+        "by": "norvig",
+        "time": 1314211127,
+        "parent": 2921506,
+        "text": "Aw shucks, guys",
+        "kids": [2922097, 2922429]
+      }
+    }
+  ],
+  "expect": {
+    "contains": ["\"type\":\"comment\"", "norvig", "\"parent\":2.921506e+06", "\"kids_count\":2"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/2921983.json" }
+    ]
+  }
+}

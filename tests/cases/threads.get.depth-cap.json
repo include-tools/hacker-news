@@ -1,0 +1,27 @@
+{
+  "name": "threads.get honors the depth cap and leaves deeper kids unfetched",
+  "tool": "threads.get",
+  "args": { "root_id": 1, "max_depth": 1 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/1.json",
+      "json": { "id": 1, "type": "story", "kids": [2, 3] }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/2.json",
+      "json": { "id": 2, "type": "comment", "by": "a", "text": "top a", "kids": [20, 21] }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/3.json",
+      "json": { "id": 3, "type": "comment", "by": "b", "text": "top b", "kids": [30] }
+    }
+  ],
+  "expect": {
+    "contains": ["\"nodes_fetched\":2", "\"truncated\":true", "\"replies\":[]", "\"max_depth_reached\":1"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/1.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/2.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/3.json" }
+    ]
+  }
+}

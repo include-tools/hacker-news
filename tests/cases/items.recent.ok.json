@@ -1,0 +1,24 @@
+{
+  "name": "items.recent returns newest items in descending id order",
+  "tool": "items.recent",
+  "args": { "limit": 2 },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/maxitem.json", "json": 100 },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/100.json",
+      "json": { "id": 100, "type": "comment", "by": "x", "text": "newest" }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/99.json",
+      "json": { "id": 99, "type": "story", "title": "second newest", "by": "y", "score": 1 }
+    }
+  ],
+  "expect": {
+    "contains": ["\"max_id\":100", "\"items_returned\":2", "\"scan_budget\":4", "newest", "second newest"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/maxitem.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/100.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/99.json" }
+    ]
+  }
+}

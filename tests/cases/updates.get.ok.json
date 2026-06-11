@@ -1,0 +1,17 @@
+{
+  "name": "updates.get relays changed item ids and profiles with counts",
+  "tool": "updates.get",
+  "args": {},
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/updates.json",
+      "json": { "items": [48492315, 48492193], "profiles": ["brycewray"] }
+    }
+  ],
+  "expect": {
+    "contains": ["4.8492315e+07", "4.8492193e+07", "brycewray", "\"item_ids\":2", "\"profiles\":1"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/updates.json" }
+    ]
+  }
+}

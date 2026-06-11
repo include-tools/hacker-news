@@ -1,0 +1,17 @@
+{
+  "name": "threads.get guards against cycles with a visited set",
+  "tool": "threads.get",
+  "args": { "root_id": 1 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/1.json",
+      "json": { "id": 1, "type": "story", "title": "Self-referential", "kids": [1] }
+    }
+  ],
+  "expect": {
+    "contains": ["\"cycles_skipped\":1", "\"nodes_fetched\":0"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/1.json" }
+    ]
+  }
+}

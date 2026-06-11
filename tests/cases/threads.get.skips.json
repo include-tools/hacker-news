@@ -1,0 +1,31 @@
+{
+  "name": "threads.get tallies skipped/failed comments and prunes deleted subtrees",
+  "tool": "threads.get",
+  "args": { "root_id": 1, "max_nodes": 10 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/1.json",
+      "json": { "id": 1, "type": "story", "kids": [2, 3, 4] }
+    },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/2.json",
+      "json": { "id": 2, "type": "comment", "deleted": true, "kids": [99] }
+    },
+    { "pattern": "hacker-news.firebaseio.com/v0/item/3.json", "json": "null" },
+    { "pattern": "hacker-news.firebaseio.com/v0/item/4.json", "status": 500 }
+  ],
+  "expect": {
+    "contains": [
+      "\"nodes_fetched\":0",
+      "\"skipped_deleted_or_dead\":1",
+      "\"skipped_null\":1",
+      "\"failed_fetch\":1"
+    ],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/1.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/2.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/3.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/4.json" }
+    ]
+  }
+}

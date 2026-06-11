@@ -1,0 +1,14 @@
+{
+  "name": "stories.list returns an empty result for an empty feed with one call",
+  "tool": "stories.list",
+  "args": { "kind": "new", "limit": 5 },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/newstories.json", "json": [] }
+  ],
+  "expect": {
+    "contains": ["\"stories\":[]", "\"truncated\":false", "\"feed_ids_available\":0", "\"ids_selected\":0"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/newstories.json" }
+    ]
+  }
+}

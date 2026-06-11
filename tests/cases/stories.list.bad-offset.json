@@ -1,0 +1,10 @@
+{
+  "name": "stories.list rejects a negative offset without calling upstream",
+  "tool": "stories.list",
+  "args": { "offset": -1 },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}

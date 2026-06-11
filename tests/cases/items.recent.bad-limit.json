@@ -1,0 +1,10 @@
+{
+  "name": "items.recent rejects limit:0 without calling upstream",
+  "tool": "items.recent",
+  "args": { "limit": 0 },
+  "fixtures": [],
+  "expect": {
+    "errorContains": "validation_error",
+    "calls": []
+  }
+}

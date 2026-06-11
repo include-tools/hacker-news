@@ -1,0 +1,35 @@
+{
+  "name": "stories.list skips null/deleted/failed members and tallies each bucket",
+  "tool": "stories.list",
+  "args": { "kind": "top", "limit": 4 },
+  "fixtures": [
+    { "pattern": "hacker-news.firebaseio.com/v0/topstories.json", "json": [401, 402, 403, 404] },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/401.json",
+      "json": { "id": 401, "type": "story", "title": "Live Story", "by": "a", "score": 9, "descendants": 5 }
+    },
+    { "pattern": "hacker-news.firebaseio.com/v0/item/402.json", "json": "null" },
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/403.json",
+      "json": { "id": 403, "type": "story", "deleted": true }
+    },
+    { "pattern": "hacker-news.firebaseio.com/v0/item/404.json", "status": 500 }
+  ],
+  "expect": {
+    "contains": [
+      "Live Story",
+      "\"ids_selected\":4",
+      "\"stories_returned\":1",
+      "\"skipped_null\":1",
+      "\"skipped_deleted_or_dead\":1",
+      "\"failed_fetch\":1"
+    ],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/topstories.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/401.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/402.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/403.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/404.json" }
+    ]
+  }
+}
