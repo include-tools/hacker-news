@@ -1,0 +1,5 @@
+{
+  "replace": {
+    "github.com/include-tools/hacker-news": "."
+  }
+}

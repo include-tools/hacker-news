@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "toolbox-readonly": {
+      "command": "toolbox",
+      "args": ["codemode", "mcp", "--effects=readonly"],
+      "env": {
+        "TOOLBOX_AUDIT_LOG": "./toolbox-audit.jsonl"
+      }
+    },
+    "toolbox": {
+      "command": "toolbox",
+      "args": ["codemode", "mcp"],
+      "env": {
+        "TOOLBOX_AUDIT_LOG": "./toolbox-audit.jsonl"
+      }
+    }
+  }
+}
