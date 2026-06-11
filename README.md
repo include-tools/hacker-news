@@ -27,10 +27,8 @@ can never accidentally start five thousand).
 ## Quickstart
 
 ```sh
-git clone https://github.com/include-tools/hacker-news
-cd hacker-news
-toolbox install     # resolves the toolset (toolbox.toolset.json)
-claude              # .mcp.json exposes the tools via `toolbox codemode mcp`
+toolbox install github.com/include-tools/hacker-news@v0.1.1   # adds it to ./toolbox.toolset.json
+claude   # with an .mcp.json exposing `toolbox codemode mcp`
 ```
 
 Then just ask: *"Summarize today's top 10 HN stories and pull the three most
