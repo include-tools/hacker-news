@@ -77,7 +77,7 @@ export default async function tool(
     for (const kid of rootKids) queue.push({ id: kid, depth: 1, into: comments });
   }
 
-  let nodesFetched = 0;
+  let nodesFetched = 0; // comment item fetch attempts, including skipped/failed outcomes
   let skippedDeletedOrDead = 0;
   let skippedNull = 0;
   let failedFetch = 0;
@@ -93,6 +93,7 @@ export default async function tool(
       continue;
     }
     visited.add(entry.id);
+    nodesFetched++;
     const outcome = await fetchMemberItem(entry.id);
     if (outcome.kind === "null") {
       skippedNull++;
@@ -119,7 +120,6 @@ export default async function tool(
     if (it.posted_at !== undefined) node.posted_at = it.posted_at;
     if (it.text !== undefined) node.text = it.text;
     entry.into.push(node);
-    nodesFetched++;
     if (entry.depth > maxDepthReached) maxDepthReached = entry.depth;
     if (it.kids_count > 0) {
       if (entry.depth < depthBound) {

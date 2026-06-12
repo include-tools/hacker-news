@@ -305,9 +305,10 @@ the `kids` array is not (use `threads.get` to walk it).
 - Non-2xx response → `upstream_error: Hacker News API returned {status}`.
 - Otherwise → normalized `Item`, including the deleted/dead branches.
 
-**Test grounding (fixtures + host-call assertions).**
+**Test grounding (recorded cassettes / fixtures + host-call assertions).**
 
-- *ok (story)* — fixture `item/8863.json` → assert one call
+- *ok (story)* — recorded cassette `tests/cassettes/items.get.ok.json` for
+  `item/8863.json` → assert one call
   `GET hacker-news.firebaseio.com /v0/item/8863.json`; output contains the title,
   `by`, `kids_count`, and `posted_at` as a `Date` (`2007-04-04T19:16:40Z`).
   (Existing `tests/cases/items.get.ok.json`.)
@@ -421,11 +422,12 @@ signalling the agent can page by raising `offset`.
   false`. Not an error.
 - Per-item failures are partial-result, never fatal (counted, see above).
 
-**Test grounding (fixtures + host-call assertions).**
+**Test grounding (recorded cassettes / fixtures + host-call assertions).**
 
-- *ok (ordered, truncated)* — feed `[101,102,103,104]`, `limit:2` → assert calls
-  in exact order `topstories.json`, `item/101.json`, `item/102.json` (and **not**
-  103/104); output contains both titles and `truncated: true`,
+- *ok (ordered, truncated)* — recorded cassette `tests/cassettes/stories.list.ok.json`,
+  `kind:"top"`, `limit:2` → assert calls in exact order `topstories.json`, then
+  the two selected `item/{id}.json` records (and **not** later ids); output
+  contains both titles and `truncated: true`,
   `actual_counts.stories_returned: 2`. (Existing `tests/cases/stories.list.ok.json`.)
 - *kind routing* — `kind:"show"` asserts the call hits `showstories.json`;
   one case per kind confirms the six-way map.
@@ -467,7 +469,7 @@ this tool intentionally returns a *bounded sample*, not the entire tree.
 |------|------|---------|------------|
 | `root_id` | `number` | — (required) | Integer `> 0`; else `validation_error`, no host calls. |
 | `max_depth` | `number` | `3` | Integer `0..6` (root is depth 0; comments start at depth 1); else `validation_error`. |
-| `max_nodes` | `number` | `50` | Integer `1..200` (total comments fetched, excluding root); else `validation_error`. |
+| `max_nodes` | `number` | `50` | Integer `1..200` (total comment item fetch attempts, excluding root and including null/deleted/failed responses); else `validation_error`. |
 
 **Output.**
 
@@ -479,7 +481,7 @@ interface ThreadResult {
     max_nodes: number; // effective node budget
   };
   actual_counts: {
-    nodes_fetched: number;            // comment items placed in the tree (excludes root)
+    nodes_fetched: number;            // comment item fetch attempts made (excludes root; includes skipped/failed members)
     skipped_deleted_or_dead: number;  // comment ids whose item was deleted/dead (subtree pruned)
     skipped_null: number;             // comment ids whose body was null
     failed_fetch: number;             // comment fetches that returned non-2xx
@@ -503,15 +505,17 @@ interface Comment {
 }
 ```
 
-- **Count invariant:** every comment id dequeued during the walk lands in exactly
-  one of `nodes_fetched`, `skipped_deleted_or_dead`, `skipped_null`,
-  `failed_fetch`, or `cycles_skipped`. The root fetch is **not** counted (it is
-  the root, returned as `root`).
+- **Count invariant:** `nodes_fetched = materialised comments +
+  skipped_deleted_or_dead + skipped_null + failed_fetch`. The materialised
+  comments are the nodes present in `comments` / `replies`. Cycle hits increment
+  `cycles_skipped` before any comment fetch, so they do not consume
+  `max_nodes`. The root fetch is **not** counted (it is the root, returned as
+  `root`).
 - **Ordering:** children appear in upstream `kids` order (HN ranked order) at
   every level. Traversal is breadth-first so the budget favours the
   highest-ranked comments across the tree rather than draining into one subtree.
-- **Max items:** `nodes_fetched <= max_nodes <= 200`; nesting depth `<= max_depth
-  <= 6`.
+- **Max fetches:** `nodes_fetched <= max_nodes <= 200`; nesting depth of
+  materialised comments is `<= max_depth <= 6`.
 - **Partial-result signal:** `truncated` is `true` if any node still had
   unexpanded `kids` when the depth bound or node budget was hit. At a node, a
   non-empty `kids_count` with a shorter `replies` array is the local truncation
@@ -519,8 +523,10 @@ interface Comment {
 
 **Bounds and truncation.** Hard caps: `max_depth <= 6`, `max_nodes <= 200` ⇒ at
 most `1 + 200 = 201` host calls. Lower `max_nodes` for latency; the result stays
-correct, just smaller, with `truncated: true`. Cycles cannot inflate the budget:
-a visited `Set` of ids guarantees each id is fetched at most once.
+correct, just smaller, with `truncated: true`. Null, deleted/dead, and failed
+comment responses consume the same budget as successful comments, so the host
+call ceiling is always `1 + max_nodes`. Cycles cannot inflate the budget: a
+visited `Set` of ids guarantees each id is fetched at most once.
 
 **Upstream call plan and transformations.**
 
@@ -529,11 +535,12 @@ a visited `Set` of ids guarantees each id is fetched at most once.
 2. Seed a FIFO queue with the root's `kids` (depth 1), tracking depth per id and a
    visited `Set` seeded with `root_id`.
 3. While the queue is non-empty **and** `nodes_fetched < max_nodes`: dequeue id;
-   if already visited → `cycles_skipped`, continue; mark visited; `GET
-   /v0/item/{id}.json`. Classify: `null`→`skipped_null`; `deleted`/`dead`→
-   `skipped_deleted_or_dead` (its subtree is **pruned** — not enqueued); non-2xx→
-   `failed_fetch`. Otherwise build a `Comment`, attach under its parent, and — if
-   `depth < max_depth` — enqueue its `kids` at `depth+1`.
+   if already visited → `cycles_skipped`, continue; mark visited; increment
+   `nodes_fetched`, then `GET /v0/item/{id}.json`. Classify:
+   `null`→`skipped_null`; `deleted`/`dead`→`skipped_deleted_or_dead` (its subtree
+   is **pruned** — not enqueued); non-2xx→`failed_fetch`. Otherwise build a
+   `Comment`, attach under its parent, and — if `depth < max_depth` — enqueue its
+   `kids` at `depth+1`.
 4. `truncated` = the queue was non-empty when the loop stopped, **or** any
    retained node had `kids_count > 0` beyond `max_depth`.
 
@@ -552,11 +559,12 @@ a visited `Set` of ids guarantees each id is fetched at most once.
   live replies nested under a since-deleted parent are not returned — matches use
   case #5's "skip deleted/dead").
 
-**Test grounding (fixtures + host-call assertions).**
+**Test grounding (recorded cassettes / fixtures + host-call assertions).**
 
-- *ok (nested, bounded)* — root `1` with `kids:[2,3]`, `2` with `kids:[4]`,
-  `max_depth:2, max_nodes:10` → assert BFS call order `item/1`, `item/2`,
-  `item/3`, `item/4`; output nests `4` under `2`, `nodes_fetched:3`,
+- *ok (nested, bounded)* — recorded cassette `tests/cassettes/threads.get.ok.json`
+  for root `9224`, child `9272`, and grandchild `9479`, `max_depth:2`,
+  `max_nodes:2` → assert BFS call order `item/9224`, `item/9272`, `item/9479`;
+  output nests `9479` under `9272`, `nodes_fetched:2`,
   `truncated:false`.
 - *node-budget truncation* — root with 5 kids, `max_nodes:2` → assert exactly
   `1 + 2 = 3` calls, `truncated:true`, and the two retained top-level comments
@@ -569,7 +577,10 @@ a visited `Set` of ids guarantees each id is fetched at most once.
   `truncated:false`.
 - *skips* — a kid returns `{deleted:true}` (subtree pruned, asserted not
   enqueued), another returns `null`, another `500` → assert the three skip/fail
-  buckets and that the walk continued.
+  buckets, `nodes_fetched:3`, and that the walk continued.
+- *node budget with skips* — first two kids are null/failed and `max_nodes:2` →
+  assert only those two comment ids are fetched, the third kid is not fetched,
+  and `truncated:true`.
 - *root not_found* — root returns `null` → `errorContains:"not_found"`, one call.
 - *bad bounds* — `max_nodes:9999` → `errorContains:"validation_error"`,
   `calls:[]`.
@@ -674,15 +685,18 @@ No recursion is performed.
   hydration counts 0, one host call.
 - Per-submission failures → counted, partial result (never fatal).
 
-**Test grounding (fixtures + host-call assertions).**
+**Test grounding (recorded cassettes / fixtures + host-call assertions).**
 
-- *profile only* — `username:"jl"`, default `include_recent:0` → assert exactly
-  one call `user/jl.json`; output has `karma`, `created_at` as a `Date`,
+- *profile only* — recorded cassette `tests/cassettes/users.get.profile.json`,
+  `username:"jl"`, default `include_recent:0` → assert exactly one call
+  `user/jl.json`; output has `karma`, `created_at` as a `Date`,
   `submitted_count`, `truncated:true` when submitted ids exist, and
   `recent_submissions: []`.
-- *with hydration, ordered* — `submitted:[10,11,12]`, `include_recent:2` → assert
-  calls `user/{name}.json`, `item/10.json`, `item/11.json` in that order (12 not
-  fetched); `submissions_returned:2`, `submitted_count:3`, `truncated:true`.
+- *with hydration, ordered* — recorded cassette
+  `tests/cassettes/users.get.hydrate.json`, `username:"jl"`,
+  `include_recent:2` → assert calls `user/jl.json`, then the first two
+  submitted `item/{id}.json` records in order; `submissions_returned:2`,
+  `truncated:true`.
 - *case sensitivity* — `username:"JL"` and `"jl"` hit distinct paths
   `user/JL.json` vs `user/jl.json` (verbatim, no normalisation).
 - *submission skips* — among hydrated ids one `null`, one `{dead:true}`, one
@@ -772,14 +786,14 @@ does not advance a cursor, consume an event, mark anything seen, or take a lease
 changes on essentially every poll, so a prior result cannot substitute for a
 refetch (rules 8–9).
 
-**Test grounding (fixtures + host-call assertions).**
+**Test grounding (recorded cassettes / fixtures + host-call assertions).**
 
-- *ok* — fixture `{ "items":[48492315,48492193], "profiles":["brycewray"] }` →
-  assert one call `GET hacker-news.firebaseio.com /v0/updates.json`; output
-  `item_ids:[48492315,48492193]`, `profiles:["brycewray"]`,
+- *ok* — recorded cassette `tests/cassettes/updates.get.ok.json` → assert one
+  call `GET hacker-news.firebaseio.com /v0/updates.json`; output includes
+  returned `item_ids` and `profiles` in upstream order,
   `requested_limits:{item_ids:100,profiles:100}`,
-  `actual_counts:{item_ids:2,profiles:1,item_ids_available:2,profiles_available:1}`,
-  `truncated:false`.
+  matching returned/available counts, and `truncated:false` when the upstream
+  arrays fit under the fixed caps.
 - *empty arrays* — `{ "items":[], "profiles":[] }` → both `[]`, counts `0`.
 - *missing keys* — `{}` → both default to `[]`, counts `0`.
 - *upstream_error* — status `500` → `errorContains:"upstream_error"`.
@@ -868,11 +882,12 @@ host calls.
   `items_returned < limit`, counts explain why. Not an error.
 - Per-item failures → counted, walk continues.
 
-**Test grounding (fixtures + host-call assertions).**
+**Test grounding (recorded cassettes / fixtures + host-call assertions).**
 
-- *ok* — `maxitem` `100`, items `100`/`99` live, `limit:2` → assert call order
-  `maxitem.json`, `item/100.json`, `item/99.json`; `items_returned:2`,
-  `max_id:100`, items in descending-id order.
+- *ok* — recorded cassette `tests/cassettes/items.recent.ok.json`, `limit:2` →
+  assert call order `maxitem.json`, then the two descending `item/{id}.json`
+  records from that `maxitem` value; `items_returned:2`, `max_id` echoed, items
+  in descending-id order.
 - *skips within budget* — `maxitem` `100`, `item/100` `null`, `item/99`
   `{deleted:true}`, `item/98` live, `limit:1` → assert it scans 100→99→98,
   `items_returned:1`, `skipped_null:1`, `skipped_deleted_or_dead:1`.

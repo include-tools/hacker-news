@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "episodes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/item/8863.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "375"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:21:54 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": {
+          "by": "dhouston",
+          "descendants": 71,
+          "id": 8863,
+          "kids": [
+            9224,
+            8917,
+            8884,
+            8887,
+            8952,
+            8869,
+            8873,
+            8958,
+            8940,
+            8908,
+            9005,
+            9671,
+            9067,
+            9055,
+            8865,
+            8881,
+            8872,
+            8955,
+            10403,
+            8903,
+            8928,
+            9125,
+            8998,
+            8901,
+            8902,
+            8907,
+            8894,
+            8870,
+            8878,
+            8980,
+            8934,
+            8943,
+            8876
+          ],
+          "score": 104,
+          "time": 1175714200,
+          "title": "My YC app: Dropbox - Throw away your USB drive",
+          "type": "story",
+          "url": "http://www.getdropbox.com/u/2/screencast.html"
+        }
+      },
+      "recorded_at": "2026-06-12T09:21:54.819Z"
+    }
+  ]
+}

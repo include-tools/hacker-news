@@ -16,7 +16,7 @@
   ],
   "expect": {
     "contains": [
-      "\"nodes_fetched\":0",
+      "\"nodes_fetched\":3",
       "\"skipped_deleted_or_dead\":1",
       "\"skipped_null\":1",
       "\"failed_fetch\":1"

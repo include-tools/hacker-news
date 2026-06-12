@@ -1,0 +1,26 @@
+{
+  "name": "threads.get charges null and failed comment fetches against max_nodes",
+  "tool": "threads.get",
+  "args": { "root_id": 1, "max_nodes": 2 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/1.json",
+      "json": { "id": 1, "type": "story", "title": "Sparse", "kids": [2, 3, 4] }
+    },
+    { "pattern": "hacker-news.firebaseio.com/v0/item/2.json", "json": "null" },
+    { "pattern": "hacker-news.firebaseio.com/v0/item/3.json", "status": 500 }
+  ],
+  "expect": {
+    "contains": [
+      "\"nodes_fetched\":2",
+      "\"skipped_null\":1",
+      "\"failed_fetch\":1",
+      "\"truncated\":true"
+    ],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/1.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/2.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/3.json" }
+    ]
+  }
+}

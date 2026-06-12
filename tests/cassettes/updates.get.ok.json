@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "episodes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/updates.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "911"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:21:56 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": {
+          "items": [
+            48498935,
+            48501798,
+            48501678,
+            48501640,
+            48501702,
+            48500206,
+            48466281,
+            48492958,
+            48500780,
+            48501799,
+            48501059,
+            48501376,
+            48501801,
+            48500979,
+            48501774,
+            48497247,
+            48466066,
+            48476409,
+            48501663,
+            48501802,
+            48501025,
+            48490830,
+            48501003,
+            48501069,
+            48466282,
+            48466158,
+            48501803,
+            48501467,
+            48501804,
+            48496285,
+            48498828,
+            48499017,
+            48501805,
+            48466394,
+            48476356,
+            48490495,
+            48488608,
+            48498423,
+            48498934,
+            48492118,
+            48497609,
+            48497031,
+            48491830,
+            48500012,
+            48465874,
+            48490094,
+            48495383,
+            48427421,
+            48493564,
+            48500404,
+            48498573,
+            48501800,
+            48498385,
+            48496250,
+            48489402,
+            48479314,
+            48487540,
+            48489229,
+            48446673,
+            48491486,
+            48470248,
+            48492533,
+            48478969,
+            48490024,
+            48496396,
+            48462070
+          ],
+          "profiles": [
+            "moomoo11",
+            "dapsvi",
+            "daniwk",
+            "jjfoooo4",
+            "tzs",
+            "vincnetas",
+            "bananaquant",
+            "huhuhang",
+            "themafia",
+            "darkteflon",
+            "batonkeep",
+            "startup0",
+            "Schlagbohrer",
+            "aurareturn",
+            "28hkent",
+            "cizhou05",
+            "PeterStuer",
+            "program_whiz",
+            "piker",
+            "Quarrel",
+            "timmg",
+            "refactor_master",
+            "RyeCombinator",
+            "Manuel_D",
+            "inventor7777"
+          ]
+        }
+      },
+      "recorded_at": "2026-06-12T09:21:56.684Z"
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "version": 1,
+  "episodes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/maxitem.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "8"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:21:56 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": 48501805
+      },
+      "recorded_at": "2026-06-12T09:21:56.963Z"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/item/48501805.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "189"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:21:57 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": {
+          "by": "refactor_master",
+          "id": 48501805,
+          "parent": 48491486,
+          "text": "The level of nested ifs is just pure insanity. Is this COBOL forcing this kind of style?",
+          "time": 1781256084,
+          "type": "comment"
+        }
+      },
+      "recorded_at": "2026-06-12T09:21:57.102Z"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/item/48501804.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "229"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:21:57 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": {
+          "by": "Quarrel",
+          "id": 48501804,
+          "parent": 48496285,
+          "text": "I&#x27;m a Terence Tao fan, but yes, OpenAI should at the very least just be telling him to go crazy with the latest models on our dime.",
+          "time": 1781256082,
+          "type": "comment"
+        }
+      },
+      "recorded_at": "2026-06-12T09:21:57.242Z"
+    }
+  ]
+}
