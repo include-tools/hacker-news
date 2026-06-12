@@ -1,6 +1,6 @@
 import { Item, err, fetchJson, fetchMemberItem, itemKids, normalizeRootItem } from "../lib/hn.ts";
 
-interface Comment {
+interface CommentFields {
   id: number;
   by?: string;
   posted_at?: Date;
@@ -9,7 +9,30 @@ interface Comment {
   dead: boolean;
   depth: number; // 1 for top-level, increasing with nesting
   kids_count: number; // upstream direct-child count (may exceed replies.length when truncated)
-  replies: Comment[]; // child comments actually fetched, HN ranked order
+}
+
+// Public metadata is finite because the tool enforces max_depth <= 6.
+interface CommentDepth6 extends CommentFields {
+  replies: [];
+}
+interface CommentDepth5 extends CommentFields {
+  replies: CommentDepth6[];
+}
+interface CommentDepth4 extends CommentFields {
+  replies: CommentDepth5[];
+}
+interface CommentDepth3 extends CommentFields {
+  replies: CommentDepth4[];
+}
+interface CommentDepth2 extends CommentFields {
+  replies: CommentDepth3[];
+}
+interface CommentDepth1 extends CommentFields {
+  replies: CommentDepth2[];
+}
+
+interface MutableComment extends CommentFields {
+  replies: MutableComment[]; // child comments actually fetched, HN ranked order
 }
 
 interface ThreadResult {
@@ -24,13 +47,13 @@ interface ThreadResult {
     max_depth_reached: number;
   };
   truncated: boolean;
-  comments: Comment[];
+  comments: CommentDepth1[];
 }
 
 interface QueueEntry {
   id: number;
   depth: number;
-  into: Comment[]; // the replies array this node should be appended to
+  into: MutableComment[]; // the replies array this node should be appended to
 }
 
 /**
@@ -65,7 +88,7 @@ export default async function tool(
   const root = normalizeRootItem(rawRoot);
   const rootKids = itemKids(rawRoot);
 
-  const comments: Comment[] = [];
+  const comments: MutableComment[] = [];
   const visited = new Set<number>([root_id]);
   const queue: QueueEntry[] = [];
   // Root is depth 0; only seed its kids (depth 1) when 0 < max_depth.
@@ -104,7 +127,7 @@ export default async function tool(
       continue;
     }
     const it = outcome.item;
-    const node: Comment = {
+    const node: MutableComment = {
       id: it.id,
       deleted: it.deleted,
       dead: it.dead,
@@ -140,6 +163,6 @@ export default async function tool(
       max_depth_reached: maxDepthReached,
     },
     truncated: queue.length > 0 || depthBoundaryTruncation,
-    comments,
+    comments: comments as CommentDepth1[],
   };
 }
