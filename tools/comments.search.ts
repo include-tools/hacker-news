@@ -24,8 +24,8 @@ export default async function tool(
   page?: number,
   author?: string,
   story_id?: number,
-  since?: number,
-  until?: number,
+  since?: Date,
+  until?: Date,
 ): Promise<AlgoliaSearchResult> {
   const normalizedQuery = normalizeOptionalQuery(query);
   const order = validateSearchSort(sort);

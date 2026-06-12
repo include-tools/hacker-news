@@ -80,6 +80,10 @@ export interface AlgoliaSearchHit {
 
 export interface AlgoliaSearchResult {
   sort: SearchSort;
+  requested_limits: {
+    limit: number;
+    page: number;
+  };
   requested_filters: {
     query?: string;
     tags: string[];
@@ -95,6 +99,7 @@ export interface AlgoliaSearchResult {
     hits_per_page: number;
     processing_time_ms?: number;
   };
+  truncated: boolean;
   hits: AlgoliaSearchHit[];
 }
 
@@ -153,20 +158,20 @@ export function validateTagUsername(username: string | undefined): string | unde
 
 export function addCreatedAtFilters(
   numericFilters: string[],
-  since: number | undefined,
-  until: number | undefined,
+  since: Date | undefined,
+  until: Date | undefined,
 ): void {
-  if (since !== undefined && (!Number.isInteger(since) || since < 0)) {
-    throw err("validation_error", "since must be a non-negative Unix timestamp");
+  if (since !== undefined && (!(since instanceof Date) || Number.isNaN(since.getTime()))) {
+    throw err("validation_error", "since must be a valid Date");
   }
-  if (until !== undefined && (!Number.isInteger(until) || until < 0)) {
-    throw err("validation_error", "until must be a non-negative Unix timestamp");
+  if (until !== undefined && (!(until instanceof Date) || Number.isNaN(until.getTime()))) {
+    throw err("validation_error", "until must be a valid Date");
   }
   if (since !== undefined && until !== undefined && since > until) {
     throw err("validation_error", "since must be less than or equal to until");
   }
-  if (since !== undefined) numericFilters.push(`created_at_i>=${since}`);
-  if (until !== undefined) numericFilters.push(`created_at_i<=${until}`);
+  if (since !== undefined) numericFilters.push(`created_at_i>=${Math.floor(since.getTime() / 1000)}`);
+  if (until !== undefined) numericFilters.push(`created_at_i<=${Math.floor(until.getTime() / 1000)}`);
 }
 
 export function addMinNumericFilter(
@@ -230,6 +235,10 @@ export async function searchAlgolia(req: AlgoliaSearchRequest): Promise<AlgoliaS
   }
   const result: AlgoliaSearchResult = {
     sort: req.sort,
+    requested_limits: {
+      limit: req.hitsPerPage,
+      page: req.page,
+    },
     requested_filters: {
       tags: req.tags,
       numeric_filters: req.numericFilters,
@@ -243,8 +252,10 @@ export async function searchAlgolia(req: AlgoliaSearchRequest): Promise<AlgoliaS
       page: typeof raw.page === "number" ? raw.page : req.page,
       hits_per_page: typeof raw.hitsPerPage === "number" ? raw.hitsPerPage : req.hitsPerPage,
     },
+    truncated: false,
     hits: raw.hits.map(normalizeAlgoliaHit),
   };
+  result.truncated = result.actual_counts.page + 1 < result.actual_counts.nb_pages;
   if (req.query !== undefined) result.requested_filters.query = req.query;
   if (typeof raw.processingTimeMS === "number") {
     result.actual_counts.processing_time_ms = raw.processingTimeMS;
@@ -256,7 +267,9 @@ function normalizeAlgoliaHit(raw: any): AlgoliaSearchHit {
   const objectId = String(raw.objectID ?? raw.id ?? "");
   const hit: AlgoliaSearchHit = {
     object_id: objectId,
-    tags: Array.isArray(raw._tags) ? raw._tags.filter((tag: any) => typeof tag === "string") : [],
+    tags: Array.isArray(raw._tags)
+      ? raw._tags.filter((tag: any) => typeof tag === "string").slice(0, 20)
+      : [],
   };
   const itemId = Number(objectId);
   if (Number.isInteger(itemId) && itemId > 0) hit.item_id = itemId;

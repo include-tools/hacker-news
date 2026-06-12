@@ -27,8 +27,8 @@ export default async function tool(
   page?: number,
   scope?: StoryScope,
   author?: string,
-  since?: number,
-  until?: number,
+  since?: Date,
+  until?: Date,
   min_points?: number,
   min_comments?: number,
 ): Promise<AlgoliaSearchResult> {

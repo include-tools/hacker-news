@@ -137,7 +137,9 @@ transient upstream failure surfaces as `upstream_error` (root) or a counted
 
 **Pagination.** Firebase has no cursors, `limit`, `offset`, or `page` params; id
 lists are returned whole and sliced client-side. Algolia search uses documented
-`page` and `hitsPerPage`; the toolset caps `hitsPerPage` at 50.
+`page` and `hitsPerPage`; probes showed `page: 0`, so search tools expose
+zero-based pages and cap `hitsPerPage` at 50. Search `truncated` means the
+returned Algolia page is not the last page (`page + 1 < nbPages`).
 
 **Error taxonomy.** Tools signal failure by throwing `Error` whose message is
 `"<code>: <detail>"`. Three codes, stable across all tools:
@@ -247,7 +249,8 @@ not a deferred feature:
 | `updates.get` | Lightweight change feed (#7) | `updates` | readOnly | 1 |
 | `items.recent` | Discover brand-new items via count-down (#7) | `maxitem` + `item/{id}`×N | readOnly | 1 + 2·limit (≤ 61) |
 
-No tool is `@idempotent` (live mutable data). All read from one host.
+No tool is `@idempotent` (live mutable data). All calls go only to the two
+declared public hosts.
 
 ## Tools
 
@@ -861,8 +864,21 @@ be below `limit`. Sequential descending walk keeps host-call order assertable.
 ### stories.search
 
 **Purpose.** Search Hacker News stories through Algolia HN Search with bounded
-result pages. Use relevance sort (`/api/v1/search`) for keyword work and date
-sort (`/api/v1/search_by_date`) for newest-first monitoring.
+result pages. Use relevance sort (`/api/v1/search`) for keyword/topic work and
+date sort (`/api/v1/search_by_date`) for newest-first monitoring. Covers story
+search by topic, author, date window, points, comments, and front-page / Ask HN /
+Show HN tags (use case #2).
+
+**Use when** the agent wants server-side search over stories, Ask HN posts, Show
+HN posts, or current front-page stories. This is the right tool for "stories
+about Rust", "recent Show HN posts by a user", "front-page stories", and
+"high-comment-count stories since a date".
+
+**Do not use when** you want the current HN ranked feeds without search
+semantics (`stories.list`), one known item id (`items.get`), comments
+(`comments.search`), or user profile lookup (`users.search` / `users.get`).
+Algolia search hits are index records, not canonical Firebase item records; use
+`items.get` for the canonical item shape.
 
 **Inputs.**
 
@@ -870,48 +886,130 @@ sort (`/api/v1/search_by_date`) for newest-first monitoring.
 |------|------|---------|------------|
 | `query` | `string` | omitted | Trimmed; empty string is omitted. |
 | `sort` | `"relevance"\|"date"` | `"relevance"` | Else `validation_error`, no host calls. |
-| `limit` | `number` | `10` | Integer `1..50`; else `validation_error`. |
+| `limit` | `number` | `10` | Integer `1..50`; sent as `hitsPerPage`; else `validation_error`. |
 | `page` | `number` | `0` | Integer `>= 0`; else `validation_error`. |
 | `scope` | `"story"\|"ask_hn"\|"show_hn"\|"front_page"` | `"story"` | Maps directly to the documented Algolia tag. |
-| `author` | `string` | omitted | Letters, numbers, `_`, `-`; becomes `author_{username}`. |
-| `since` / `until` | `number` | omitted | Non-negative Unix seconds; become `created_at_i>=...` / `<=...`. |
+| `author` | `string` | omitted | Letters, numbers, `_`, `-`; becomes `author_{username}`; else `validation_error`. |
+| `since` / `until` | `Date` | omitted | Valid native `Date`; `since <= until`; converted to `created_at_i>=...` / `<=...` Unix seconds. |
 | `min_points` | `number` | omitted | Non-negative integer; becomes `points>=...`. |
 | `min_comments` | `number` | omitted | Non-negative integer; becomes `num_comments>=...`. |
 
-**Output.** `AlgoliaSearchResult`:
+**Output.**
 
 ```ts
 interface AlgoliaSearchResult {
-  sort: "relevance" | "date";
+  sort: "relevance" | "date";  // required — echoes effective sort
+  requested_limits: {
+    limit: number;             // required — effective hitsPerPage, 1..50
+    page: number;              // required — requested zero-based page, >= 0
+  };
   requested_filters: {
-    query?: string;
-    tags: string[];
-    numeric_filters: string[];
-    page: number;
-    hits_per_page: number;
+    query?: string;            // omitted when absent/blank
+    tags: string[];            // required — constructed Algolia tags, max 2 here
+    numeric_filters: string[]; // required — constructed filters, max 4 here
+    page: number;              // required — same value as requested_limits.page
+    hits_per_page: number;     // required — same value as requested_limits.limit
   };
   actual_counts: {
-    hits_returned: number;
-    nb_hits: number;
-    nb_pages: number;
-    page: number;
-    hits_per_page: number;
-    processing_time_ms?: number;
+    hits_returned: number;       // hits.length; <= requested_limits.limit
+    nb_hits: number;             // upstream nbHits, or hits.length if omitted
+    nb_pages: number;            // upstream nbPages, or 0 if omitted
+    page: number;                // upstream page, or requested page if omitted
+    hits_per_page: number;       // upstream hitsPerPage, or requested limit if omitted
+    processing_time_ms?: number; // upstream processingTimeMS when numeric
   };
-  hits: AlgoliaSearchHit[];
+  truncated: boolean;          // actual_counts.page + 1 < actual_counts.nb_pages
+  hits: AlgoliaSearchHit[];    // max requested_limits.limit; Algolia result order
+}
+
+interface AlgoliaSearchHit {
+  object_id: string;       // required — upstream objectID (or id) as a string
+  item_id?: number;        // numeric object_id when positive integer; omitted otherwise
+  tags: string[];          // required — first 20 string values from `_tags`, or []
+  author?: string;         // omitted if absent/non-string
+  created_at?: Date;       // native Date from upstream `created_at`; omitted if absent/non-string
+  updated_at?: Date;       // native Date from upstream `updated_at`; omitted if absent/non-string
+  title?: string;          // story title; raw upstream text; omitted if absent/non-string
+  url?: string;            // story URL; omitted if absent/non-string
+  story_text?: string;     // Ask HN / text story body; omitted if absent/non-string
+  comment_text?: string;   // present only if Algolia returns it; omitted for normal stories
+  story_id?: number;       // upstream story_id; omitted if absent/non-number
+  story_title?: string;    // upstream story_title; omitted if absent/non-string
+  story_url?: string;      // upstream story_url; omitted if absent/non-string
+  parent_id?: number;      // comment parent id if returned; omitted for stories
+  points?: number;         // omitted when upstream returns null or omits
+  num_comments?: number;   // story comment count; omitted if absent/non-number
 }
 ```
 
-Each hit keeps stable scalar fields only: `object_id`, optional numeric
-`item_id`, `tags`, author, `created_at`, `updated_at`, title/url/story text,
-comment text, story linkage, parent id, points, and comment count. Search-hit
-`children` arrays are intentionally omitted because probes showed they can be
-large.
+Nullability and omission: optional fields are omitted, never returned as `null`;
+Algolia `points: null` is therefore omitted. `hits` is always present and may be
+empty. `children`, `_highlightResult`, `processingTimingsMS`, `params`,
+`serverTimeMS`, and `exhaustive*` metadata are intentionally omitted; probes show
+`children` can be large and highlight metadata is UI-oriented. `requested_limits`
+is the stable bounded/pagination accounting object; `requested_filters.page` and
+`requested_filters.hits_per_page` are kept as existing request echoes for
+compatibility. `actual_counts` reports the page metadata Algolia returned. There
+is no per-hit failure branch because Algolia returns each page atomically.
 
-**Errors and tests.** Bad inputs throw `validation_error` before any host call.
-Non-2xx or non-JSON Algolia responses throw `upstream_error`. Fixture coverage:
-happy story search, date-sort search, empty `hits: []`, bad limit, and upstream
-500.
+**Bounds and truncation behaviour.** Hard cap `limit <= 50`; exactly one host
+call. `page` is zero-based because probes returned `page: 0` for default first
+page. `truncated: true` means additional Algolia pages exist; the agent pages by
+calling again with `page + 1`. Empty searches return `hits: []`, `nb_hits: 0`,
+`nb_pages: 0`, `truncated: false`.
+
+**Upstream call plan and transformations.**
+
+1. Build tags: `[scope]`, plus `author_{author}` when supplied.
+2. Build numeric filters from valid inputs: `created_at_i>=floor(since/1000)`,
+   `created_at_i<=floor(until/1000)`, `points>=min_points`, and
+   `num_comments>=min_comments`.
+3. Choose endpoint: `sort:"relevance"` → `GET /api/v1/search`; `sort:"date"` →
+   `GET /api/v1/search_by_date`.
+4. Send `query` only when non-empty, always send `tags`, `page`, and
+   `hitsPerPage`, and send `numericFilters` only when at least one filter exists.
+   No headers, body, credentials, or retries.
+5. Normalize each hit to `AlgoliaSearchHit`: `objectID`→`object_id`,
+   parse positive numeric object ids into `item_id`, convert timestamp strings to
+   `Date`, copy stable scalar fields, drop large/UI-only arrays and objects.
+
+**Branch and error behaviour.**
+
+- Bad `sort`, `limit`, `page`, `scope`, `author`, `since`/`until`,
+  `min_points`, or `min_comments` → `validation_error`, zero host calls.
+- Algolia non-2xx (including the probed 400 numeric-filter envelope), non-JSON
+  body, missing result object, or missing `hits` array → `upstream_error`.
+- Empty search page (`hits: []`) → successful result, not `not_found`.
+- `page` beyond Algolia's available pages is not prevalidated because `nbPages`
+  is only known after the call; the returned page metadata and empty `hits`
+  describe the outcome.
+
+**Fixture/mock/live-test grounding.**
+
+- *happy relevance search* — `tests/cases/stories.search.ok.json`: fixture
+  matches `hn.algolia.com/api/v1/search`, asserts one `GET`, no Authorization,
+  and output fields including `object_id`, tags, `hits_returned`, and native
+  `Date`.
+- *date-sort search* — `tests/cases/stories.search.date.json`: asserts
+  `/api/v1/search_by_date`, `sort:"date"`, first-page metadata, and a dated hit.
+- *empty results* — `tests/cases/stories.search.empty.json`: `hits: []`,
+  `nbHits:0`, `nbPages:0`; asserts success with zero hits.
+- *validation error* — `tests/cases/stories.search.bad-limit.json`: invalid
+  `limit` fails before any call.
+- *upstream error* — `tests/cases/stories.search.upstream.json`: Algolia 500
+  maps to `upstream_error`.
+- Probe grounding: `docs/probes/algolia-search-stories.json`,
+  `docs/probes/algolia-search-by-date-stories.json`,
+  `docs/probes/algolia-search-author-pg.json`,
+  `docs/probes/algolia-search-empty.json`, and
+  `docs/probes/algolia-search-bad-filter.json`.
+
+**Implementation notes.** Shared `searchAlgolia` handles endpoint selection,
+URL encoding, error mapping, pagination accounting, and hit normalization.
+`stories.search.ts` should stay thin: validate/default inputs, construct tags
+and numeric filters, then call the helper. Do not hydrate Algolia hits through
+Firebase inside this tool; that would turn a one-call search page into hidden
+fan-out and change the failure model.
 
 ---
 
@@ -919,27 +1017,133 @@ happy story search, date-sort search, empty `hits: []`, bad limit, and upstream
 
 **Purpose.** Search Hacker News comments through Algolia HN Search. This covers
 comment keyword searches, comments by author, comments under a story, and comment
-time windows.
+time windows (use case #3).
+
+**Use when** the agent wants matching comments across HN, comments by an author,
+comments under a known story id, or recent comments in a time window.
+
+**Do not use when** you need the whole discussion tree under a story
+(`threads.get`) or the canonical Firebase shape for a known comment id
+(`items.get`). Algolia comment hits are search index records; they omit nested
+reply expansion and may carry story linkage fields from the index.
 
 **Inputs.**
 
 | Name | Type | Default | Validation |
 |------|------|---------|------------|
 | `query` | `string` | omitted | Trimmed; empty string is omitted. |
-| `sort` | `"relevance"\|"date"` | `"relevance"` | Else `validation_error`. |
-| `limit` | `number` | `10` | Integer `1..50`; else `validation_error`. |
+| `sort` | `"relevance"\|"date"` | `"relevance"` | Else `validation_error`, no host calls. |
+| `limit` | `number` | `10` | Integer `1..50`; sent as `hitsPerPage`; else `validation_error`. |
 | `page` | `number` | `0` | Integer `>= 0`; else `validation_error`. |
-| `author` | `string` | omitted | Becomes `author_{username}`. |
-| `story_id` | `number` | omitted | Positive integer; becomes `story_{id}`. |
-| `since` / `until` | `number` | omitted | Non-negative Unix seconds; become created-at filters. |
+| `author` | `string` | omitted | Letters, numbers, `_`, `-`; becomes `author_{username}`; else `validation_error`. |
+| `story_id` | `number` | omitted | Positive integer; becomes `story_{id}`; else `validation_error`. |
+| `since` / `until` | `Date` | omitted | Valid native `Date`; `since <= until`; converted to `created_at_i>=...` / `<=...` Unix seconds. |
 
-**Output.** Same `AlgoliaSearchResult` / `AlgoliaSearchHit` shape as
-`stories.search`, with comment hits typically carrying `comment_text`,
-`story_id`, `story_title`, `story_url`, and `parent_id`.
+**Output.**
 
-**Errors and tests.** Bad story ids or bounds throw `validation_error` with zero
-host calls. Algolia failures throw `upstream_error`. Fixture coverage includes a
-happy comment search scoped to a story, invalid `story_id`, and an upstream 400.
+```ts
+interface AlgoliaSearchResult {
+  sort: "relevance" | "date";  // required — echoes effective sort
+  requested_limits: {
+    limit: number;             // required — effective hitsPerPage, 1..50
+    page: number;              // required — requested zero-based page, >= 0
+  };
+  requested_filters: {
+    query?: string;            // omitted when absent/blank
+    tags: string[];            // required — starts with "comment", max 3 here
+    numeric_filters: string[]; // required — constructed filters, max 2 here
+    page: number;              // required — same value as requested_limits.page
+    hits_per_page: number;     // required — same value as requested_limits.limit
+  };
+  actual_counts: {
+    hits_returned: number;       // hits.length; <= requested_limits.limit
+    nb_hits: number;             // upstream nbHits, or hits.length if omitted
+    nb_pages: number;            // upstream nbPages, or 0 if omitted
+    page: number;                // upstream page, or requested page if omitted
+    hits_per_page: number;       // upstream hitsPerPage, or requested limit if omitted
+    processing_time_ms?: number; // upstream processingTimeMS when numeric
+  };
+  truncated: boolean;          // actual_counts.page + 1 < actual_counts.nb_pages
+  hits: AlgoliaSearchHit[];    // max requested_limits.limit; Algolia result order
+}
+
+interface AlgoliaSearchHit {
+  object_id: string;       // required — upstream objectID (or id) as a string
+  item_id?: number;        // numeric object_id when positive integer; omitted otherwise
+  tags: string[];          // required — first 20 string values from `_tags`, or []
+  author?: string;         // omitted if absent/non-string
+  created_at?: Date;       // native Date from upstream `created_at`; omitted if absent/non-string
+  updated_at?: Date;       // native Date from upstream `updated_at`; omitted if absent/non-string
+  title?: string;          // rarely present on comment hits; omitted if absent/non-string
+  url?: string;            // rarely present on comment hits; omitted if absent/non-string
+  story_text?: string;     // omitted if absent/non-string
+  comment_text?: string;   // raw indexed comment text; omitted if absent/non-string
+  story_id?: number;       // linked story id; omitted if absent/non-number
+  story_title?: string;    // linked story title; omitted if absent/non-string
+  story_url?: string;      // linked story URL; omitted if absent/non-string
+  parent_id?: number;      // parent item id; omitted if absent/non-number
+  points?: number;         // omitted when upstream returns null or omits
+  num_comments?: number;   // omitted if absent/non-number
+}
+```
+
+Nullability and omission match `stories.search`: optional fields are omitted,
+never returned as `null`; `hits` is always present and may be empty. `children`,
+`_highlightResult`, and other UI-only Algolia metadata are omitted. The most
+common comment hit fields observed in probes are `comment_text`, `story_id`,
+`story_title`, `story_url`, and `parent_id`. `requested_limits` is the stable
+bounded/pagination accounting object; `requested_filters.page` and
+`requested_filters.hits_per_page` are retained request echoes for compatibility.
+
+**Bounds and truncation behaviour.** Hard cap `limit <= 50`; exactly one host
+call. Pagination is the same zero-based Algolia page contract as
+`stories.search`. `truncated` is true when more result pages exist; empty result
+pages are successful with `hits: []`.
+
+**Upstream call plan and transformations.**
+
+1. Build tags: `["comment"]`, plus `author_{author}` and/or `story_{story_id}`
+   when supplied. Algolia ANDs these tags, matching the documented
+   `comment,story_X` and `author_USERNAME` search forms.
+2. Build numeric filters only from the optional `Date` window:
+   `created_at_i>=floor(since/1000)` and
+   `created_at_i<=floor(until/1000)`.
+3. Choose endpoint by `sort` exactly as `stories.search`.
+4. Send `query` only when non-empty, always send `tags`, `page`, and
+   `hitsPerPage`, and send `numericFilters` only when at least one date filter
+   exists. No headers, body, credentials, or retries.
+5. Normalize hits through the shared `AlgoliaSearchHit` projection.
+
+**Branch and error behaviour.**
+
+- Bad `sort`, `limit`, `page`, `author`, `story_id`, or `since`/`until` →
+  `validation_error`, zero host calls.
+- Algolia non-2xx (including the probed 400 error envelope), non-JSON body,
+  missing result object, or missing `hits` array → `upstream_error`.
+- Empty search page (`hits: []`) → successful result, not `not_found`.
+- A comment hit with `points: null` or absent optional fields still succeeds;
+  those optional fields are omitted in the normalized hit.
+
+**Fixture/mock/live-test grounding.**
+
+- *happy scoped search* — `tests/cases/comments.search.ok.json`: fixture matches
+  `hn.algolia.com/api/v1/search`, uses `tags=comment,story_123`, asserts one
+  unauthenticated `GET`, `object_id`, `story_id`, comment text, and native
+  `Date`.
+- *empty results* — `tests/cases/comments.search.empty.json`: `hits: []`,
+  `nbHits:0`, `nbPages:0`; asserts success with zero hits.
+- *validation error* — `tests/cases/comments.search.bad-story-id.json`: invalid
+  `story_id` fails before any host call.
+- *upstream error* — `tests/cases/comments.search.upstream.json`: Algolia 400
+  maps to `upstream_error`.
+- Probe grounding: `docs/probes/algolia-search-comments.json`,
+  `docs/probes/algolia-search-empty.json`, and
+  `docs/probes/algolia-search-bad-filter.json`.
+
+**Implementation notes.** Shares `searchAlgolia`, so pagination accounting,
+error handling, and hit normalization stay identical to `stories.search`. Do not
+turn `story_id` into a Firebase fetch; Algolia's documented `story_` tag is the
+server-side filter and keeps the tool one-call and testable.
 
 ---
 
@@ -949,23 +1153,73 @@ happy comment search scoped to a story, invalid `story_id`, and an upstream 400.
 Algolia docs do not offer full-text user search; `users.search` is named for the
 Algolia search surface but performs exact lookup through `/api/v1/users/{username}`.
 
+**Use when** the agent specifically wants Algolia's exact user profile shape
+(`username`, `karma`, optional `about`) or wants to verify that the public
+Algolia HN Search user endpoint resolves a username.
+
+**Do not use when** you need Firebase user fields such as `created_at`,
+`submitted_count`, or hydrated recent submissions (`users.get`). Do not use it
+for fuzzy/full-text user search; the research found no documented Algolia API
+for that capability.
+
 **Inputs.**
 
 | Name | Type | Default | Validation |
 |------|------|---------|------------|
-| `username` | `string` | required | Non-empty after trim; sent as a path segment. |
+| `username` | `string` | — (required) | Non-empty after trim; sent verbatim as one URL-encoded path segment; else `validation_error`, no host calls. |
 
 **Output.**
 
 ```ts
 interface AlgoliaUserResult {
-  username: string;
-  karma: number;
-  about?: string;
+  username: string; // required — exact username returned by Algolia
+  karma: number;    // required — upstream karma when numeric, else 0
+  about?: string;   // optional raw HTML/text bio; omitted if absent/non-string
 }
 ```
 
-**Errors and tests.** Blank usernames throw `validation_error` before any host
-call. Non-2xx/non-JSON responses or missing `username` in the response throw
-`upstream_error`. Fixture coverage includes a happy exact lookup, blank username,
-and upstream 500.
+Nullability: optional `about` is omitted, never `null`. This is a single root
+lookup, not fan-out or pagination, so it has no `requested_limits`,
+`actual_counts`, or `truncated`. The Firebase `users.get` schema is intentionally
+different because the two upstream APIs return different fields.
+
+**Bounds and truncation behaviour.** Exactly one host call and no pagination.
+There is no full-text user result list to bound; unsupported fuzzy search is
+explicitly out of scope.
+
+**Upstream call plan and transformations.**
+
+1. Validate `username` locally.
+2. `GET /api/v1/users/{encodeURIComponent(username)}`.
+3. Require a JSON object with a string `username`; copy `karma` when numeric
+   else default `0`; copy `about` only when a string. No headers, body,
+   credentials, or retries.
+
+**Branch and error behaviour.**
+
+- Blank/non-string `username` → `validation_error`, zero host calls.
+- Algolia non-2xx (including missing-user 404 if returned), non-JSON body,
+  non-object body, or response object without string `username` →
+  `upstream_error`.
+- There is no `not_found` code for this tool because probes only established
+  Algolia 404-style envelopes for missing items, and the user endpoint research
+  did not establish a stable missing-user contract. Treat non-2xx as upstream
+  failure rather than inventing an empty user-search result.
+
+**Fixture/mock/live-test grounding.**
+
+- *happy exact lookup* — `tests/cases/users.search.ok.json`: fixture matches
+  `hn.algolia.com/api/v1/users/pg`, asserts one unauthenticated `GET`, and
+  returns `username`, `about`, and `karma` matching
+  `docs/probes/algolia-user-pg.json`.
+- *validation error* — `tests/cases/users.search.bad-username.json`: blank
+  username fails with zero calls.
+- *upstream error* — `tests/cases/users.search.upstream.json`: Algolia 500 maps
+  to `upstream_error`.
+- Probe grounding: `docs/probes/algolia-user-pg.json`.
+
+**Implementation notes.** Keep this as exact lookup despite the `.search` method
+name; platform file names require a single-segment resource, and `users.search`
+groups the Algolia user surface with the other Algolia-backed tools. Do not add
+synthetic user search by scanning story/comment authors; that would be
+unbounded, incomplete, and not documented by the service.
