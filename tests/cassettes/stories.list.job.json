@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "episodes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/jobstories.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "280"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:37:29 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": [
+          48459968,
+          48456015,
+          48436669,
+          48433987,
+          48424103,
+          48411227,
+          48401433,
+          48397435,
+          48386588,
+          48382853,
+          48369098,
+          48343635,
+          48322030,
+          48303599,
+          48301851,
+          48297116,
+          48282478,
+          48269937,
+          48269041,
+          48267324,
+          48258995,
+          48234688,
+          48225852,
+          48221230,
+          48219340,
+          48159405,
+          48151034,
+          48147533,
+          48141191,
+          48138063,
+          48120776
+        ]
+      },
+      "recorded_at": "2026-06-12T09:37:29.365Z"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/item/48459968.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "245"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:37:29 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": {
+          "by": "gabesaruhashi",
+          "id": 48459968,
+          "score": 1,
+          "time": 1781006469,
+          "title": "Emerge Career (YC S22) Is Hiring a Founding Growth Marketer",
+          "type": "job",
+          "url": "https://www.ycombinator.com/companies/emerge-career/jobs/v0S1AEG-founding-growth-marketer"
+        }
+      },
+      "recorded_at": "2026-06-12T09:37:29.537Z"
+    }
+  ]
+}

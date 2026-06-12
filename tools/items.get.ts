@@ -1,4 +1,4 @@
-import { Item, err, fetchJson, normalizeItem } from "../lib/hn.ts";
+import { Item, err, fetchJson, normalizeRootItem } from "../lib/hn.ts";
 
 /**
  * Resolve a single Hacker News item of any type (story, comment, job, poll,
@@ -16,5 +16,5 @@ export default async function tool(id: number): Promise<Item> {
   if (raw === null) {
     throw err("not_found", `no item with id ${id}`);
   }
-  return normalizeItem(raw);
+  return normalizeRootItem(raw);
 }

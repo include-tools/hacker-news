@@ -1,0 +1,13 @@
+{
+  "name": "stories.list routes kind=ask to the askstories feed",
+  "tool": "stories.list",
+  "args": { "kind": "ask", "limit": 1 },
+  "cassette": "stories.list.ask",
+  "expect": {
+    "contains": ["Ask HN: How are thinking efforts implemented?", "\"kind\":\"ask\"", "\"ids_selected\":1", "\"stories_returned\":1"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/askstories.json", "headers": { "Authorization": "" } },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/48434240.json", "headers": { "Authorization": "" } }
+    ]
+  }
+}

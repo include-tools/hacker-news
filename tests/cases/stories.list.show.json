@@ -2,18 +2,12 @@
   "name": "stories.list routes kind=show to the showstories feed",
   "tool": "stories.list",
   "args": { "kind": "show", "limit": 1 },
-  "fixtures": [
-    { "pattern": "hacker-news.firebaseio.com/v0/showstories.json", "json": [201] },
-    {
-      "pattern": "hacker-news.firebaseio.com/v0/item/201.json",
-      "json": { "id": 201, "type": "story", "title": "Show HN: My Thing", "by": "dev", "score": 10, "descendants": 2 }
-    }
-  ],
+  "cassette": "stories.list.show",
   "expect": {
-    "contains": ["Show HN: My Thing", "\"kind\":\"show\"", "\"comments\":2"],
+    "contains": ["Show HN: Homebrew 6.0.0", "\"kind\":\"show\"", "\"ids_selected\":1", "\"stories_returned\":1"],
     "calls": [
-      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/showstories.json" },
-      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/201.json" }
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/showstories.json", "headers": { "Authorization": "" } },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/48490024.json", "headers": { "Authorization": "" } }
     ]
   }
 }

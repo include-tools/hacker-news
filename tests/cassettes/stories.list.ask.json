@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "episodes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/askstories.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "397"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:37:28 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": [
+          48434240,
+          48466488,
+          48486932,
+          48477135,
+          48481947,
+          48492118,
+          48473166,
+          48476474,
+          48489109,
+          48448313,
+          48500020,
+          48475871,
+          48499703,
+          48492515,
+          48486763,
+          48498543,
+          48488990,
+          48449187,
+          48486508,
+          48465702,
+          48486598,
+          48499164,
+          48490577,
+          48485669,
+          48487847,
+          48487573,
+          48487528,
+          48487147,
+          48480323,
+          48447980,
+          48485069,
+          48493082,
+          48492988,
+          48486225,
+          48478317,
+          48478292,
+          48478162,
+          48453224,
+          48466828,
+          48473909,
+          48473811,
+          48445780,
+          48488562,
+          48437696
+        ]
+      },
+      "recorded_at": "2026-06-12T09:37:28.753Z"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/item/48434240.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "747"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:37:28 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": {
+          "by": "simianwords",
+          "descendants": 26,
+          "id": 48434240,
+          "kids": [
+            48501524,
+            48499686,
+            48435972,
+            48498219,
+            48435236,
+            48437343,
+            48434879,
+            48436428,
+            48499940,
+            48445111,
+            48445071,
+            48434490
+          ],
+          "score": 73,
+          "text": "Claude and ChatGPT have thinking efforts where you can tune the amount of thinking allowed.<p>Like low, medium, high, xhigh and so on.<p>But are they different models underneath? Or same model with different parameter?<p>The reason I ask is because, if I change the effort param mid conversation in Claude code, I get a warning suggesting I’m breaking the cache.<p>I don’t think this happens in Codex because when I change the effort, the responses are still quick.",
+          "time": 1780835924,
+          "title": "Ask HN: How are thinking efforts implemented?",
+          "type": "story"
+        }
+      },
+      "recorded_at": "2026-06-12T09:37:28.901Z"
+    }
+  ]
+}

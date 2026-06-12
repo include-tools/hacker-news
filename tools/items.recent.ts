@@ -6,6 +6,7 @@ import {
   fetchJson,
   fetchMemberItem,
   tallySkip,
+  validateFirebaseListLimit,
 } from "../lib/hn.ts";
 
 interface RecentItemsResult {
@@ -32,10 +33,7 @@ interface RecentItemsResult {
  * @effect readOnly
  */
 export default async function tool(limit?: number): Promise<RecentItemsResult> {
-  const lim = limit ?? 10;
-  if (!Number.isInteger(lim) || lim < 1 || lim > 30) {
-    throw err("validation_error", "limit must be an integer between 1 and 30");
-  }
+  const lim = validateFirebaseListLimit(limit);
 
   const maxId = await fetchJson(`/v0/maxitem.json`);
   if (!Number.isInteger(maxId)) {

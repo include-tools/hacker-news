@@ -39,6 +39,38 @@ export function err(code: ErrorCode, detail: string): Error {
   return new Error(`${code}: ${detail}`);
 }
 
+function isRecord(value: any): value is Record<string, any> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isPositiveInteger(value: any): value is number {
+  return Number.isInteger(value) && value > 0;
+}
+
+function isFiniteNumber(value: any): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+const ITEM_TYPES = new Set<ItemType>(["story", "comment", "job", "poll", "pollopt", "unknown"]);
+
+function isKnownItemType(value: any): value is ItemType {
+  return ITEM_TYPES.has(value);
+}
+
+function isPositiveIntegerArray(value: any): value is number[] {
+  return Array.isArray(value) && value.every(isPositiveInteger);
+}
+
+function isItemObject(raw: any): raw is Record<string, any> {
+  return (
+    isRecord(raw) &&
+    isPositiveInteger(raw.id) &&
+    (raw.type === undefined || isKnownItemType(raw.type)) &&
+    (raw.kids === undefined || isPositiveIntegerArray(raw.kids)) &&
+    (raw.parts === undefined || isPositiveIntegerArray(raw.parts))
+  );
+}
+
 /**
  * Issue the single `GET https://hacker-news.firebaseio.com{path}` for a **root**
  * resource. No retries, no `?print=pretty`, no headers. Maps non-2xx and
@@ -124,6 +156,14 @@ export function validateSearchLimit(limit: number | undefined): number {
   const value = limit ?? 10;
   if (!Number.isInteger(value) || value < 1 || value > 50) {
     throw err("validation_error", "limit must be an integer between 1 and 50");
+  }
+  return value;
+}
+
+export function validateFirebaseListLimit(limit: number | undefined): number {
+  const value = limit ?? 10;
+  if (!Number.isInteger(value) || value < 1 || value > 30) {
+    throw err("validation_error", "limit must be an integer between 1 and 30");
   }
   return value;
 }
@@ -293,22 +333,64 @@ function normalizeAlgoliaHit(raw: any): AlgoliaSearchHit {
 export function normalizeItem(raw: any): Item {
   const item: Item = {
     id: raw.id,
-    type: (raw.type ?? "unknown") as ItemType,
+    type: isKnownItemType(raw.type) ? raw.type : "unknown",
     kids_count: Array.isArray(raw.kids) ? raw.kids.length : 0,
     deleted: raw.deleted === true,
     dead: raw.dead === true,
   };
-  if (raw.by !== undefined) item.by = raw.by;
-  if (typeof raw.time === "number") item.posted_at = new Date(raw.time * 1000);
-  if (raw.title !== undefined) item.title = raw.title;
-  if (raw.url !== undefined) item.url = raw.url; // "" preserved, distinct from omitted
-  if (raw.text !== undefined) item.text = raw.text;
-  if (raw.score !== undefined) item.score = raw.score;
-  if (raw.descendants !== undefined) item.descendants = raw.descendants;
-  if (raw.parent !== undefined) item.parent = raw.parent;
-  if (raw.poll !== undefined) item.poll = raw.poll;
-  if (Array.isArray(raw.parts)) item.part_ids = raw.parts;
+  if (typeof raw.by === "string") item.by = raw.by;
+  if (isFiniteNumber(raw.time)) item.posted_at = new Date(raw.time * 1000);
+  if (typeof raw.title === "string") item.title = raw.title;
+  if (typeof raw.url === "string") item.url = raw.url; // "" preserved, distinct from omitted
+  if (typeof raw.text === "string") item.text = raw.text;
+  if (isFiniteNumber(raw.score)) item.score = raw.score;
+  if (isFiniteNumber(raw.descendants)) item.descendants = raw.descendants;
+  if (isPositiveInteger(raw.parent)) item.parent = raw.parent;
+  if (isPositiveInteger(raw.poll)) item.poll = raw.poll;
+  if (isPositiveIntegerArray(raw.parts)) item.part_ids = raw.parts;
   return item;
+}
+
+export function normalizeRootItem(raw: any): Item {
+  if (!isItemObject(raw)) {
+    throw err("upstream_error", "expected an item object");
+  }
+  return normalizeItem(raw);
+}
+
+export function itemKids(raw: any): number[] {
+  return isItemObject(raw) && Array.isArray(raw.kids) ? raw.kids : [];
+}
+
+export interface UserProfile {
+  id: string;
+  created: number;
+  karma: number;
+  about?: string;
+  submitted: number[];
+}
+
+export function normalizeRootUser(raw: any): UserProfile {
+  if (
+    !isRecord(raw) ||
+    typeof raw.id !== "string" ||
+    raw.id === "" ||
+    !Number.isInteger(raw.created) ||
+    raw.created < 0 ||
+    !isFiniteNumber(raw.karma) ||
+    (raw.about !== undefined && typeof raw.about !== "string") ||
+    (raw.submitted !== undefined && !isPositiveIntegerArray(raw.submitted))
+  ) {
+    throw err("upstream_error", "expected a user object");
+  }
+  const profile: UserProfile = {
+    id: raw.id,
+    created: raw.created,
+    karma: raw.karma,
+    submitted: raw.submitted ?? [],
+  };
+  if (raw.about !== undefined) profile.about = raw.about;
+  return profile;
 }
 
 /** The skip/fail buckets shared by every fan-out tool's `actual_counts`. */
@@ -348,11 +430,14 @@ export async function fetchMemberItem(id: number): Promise<MemberOutcome> {
   if (raw === null) {
     return { kind: "null" };
   }
+  if (!isItemObject(raw)) {
+    return { kind: "failed" };
+  }
   const item = normalizeItem(raw);
   if (item.deleted || item.dead) {
     return { kind: "deleted_or_dead" };
   }
-  const kids: number[] = Array.isArray(raw.kids) ? raw.kids : [];
+  const kids = itemKids(raw);
   return { kind: "ok", item, kids };
 }
 

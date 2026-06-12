@@ -54,7 +54,7 @@ Error modes use `"<code>: <detail>"` messages:
 |---|---|
 | `validation_error` | Bad caller input. Raised before any host call, so expected upstream calls are `[]`. |
 | `not_found` | Directly requested Firebase item or user returned JSON `null`. |
-| `upstream_error` | Root request returned non-2xx, non-JSON, or an unexpected shape. Per-member fan-out failures are counted instead. |
+| `upstream_error` | Root request returned non-2xx, non-JSON, or an unexpected shape such as a feed that is not an array or an item/user object missing required fields. Per-member fan-out failures are counted instead. |
 
 ## Tool reference
 
@@ -70,7 +70,7 @@ Output: one canonical item. No `requested_limits`, `actual_counts`, or
 `truncated`.
 
 Errors: `validation_error` for bad `id`, `not_found` for `null`, and
-`upstream_error` for root fetch failure.
+`upstream_error` for root fetch failure or a malformed item object.
 
 ### `stories.list`
 
@@ -110,7 +110,8 @@ failed_fetch, cycles_skipped, max_depth_reached }`, `truncated`, and
 `depth`, `kids_count`, and `replies`.
 
 Errors: `validation_error` for bad bounds, `not_found` for a missing root, and
-`upstream_error` for root fetch failure. Per-comment failures are counted.
+`upstream_error` for root fetch failure or a malformed root item object.
+Per-comment failures are counted.
 
 ### `users.get`
 
@@ -129,7 +130,8 @@ skipped_null, failed_fetch }`, `truncated`, and `recent_submissions` canonical
 items.
 
 Errors: `validation_error` for bad input, `not_found` for a missing profile, and
-`upstream_error` for profile fetch failure. Per-submission failures are counted.
+`upstream_error` for profile fetch failure or a malformed profile object.
+Per-submission failures are counted.
 
 ### `updates.get`
 

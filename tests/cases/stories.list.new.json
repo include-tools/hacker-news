@@ -1,0 +1,13 @@
+{
+  "name": "stories.list routes kind=new to the newstories feed",
+  "tool": "stories.list",
+  "args": { "kind": "new", "limit": 1 },
+  "cassette": "stories.list.new",
+  "expect": {
+    "contains": ["Stop Waiting for Insights: Building Streaming Analytics with DolphinDB", "\"kind\":\"new\"", "\"ids_selected\":1", "\"stories_returned\":1"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/newstories.json", "headers": { "Authorization": "" } },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/48501896.json", "headers": { "Authorization": "" } }
+    ]
+  }
+}

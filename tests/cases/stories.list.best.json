@@ -1,0 +1,13 @@
+{
+  "name": "stories.list routes kind=best to the beststories feed",
+  "tool": "stories.list",
+  "args": { "kind": "best", "limit": 1 },
+  "cassette": "stories.list.best",
+  "expect": {
+    "contains": ["Building an HTML-first site doubled our users overnight", "\"kind\":\"best\"", "\"ids_selected\":1", "\"stories_returned\":1"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/beststories.json", "headers": { "Authorization": "" } },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/48475483.json", "headers": { "Authorization": "" } }
+    ]
+  }
+}

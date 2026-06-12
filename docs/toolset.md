@@ -195,6 +195,12 @@ included via `additionalTypeScriptGlobs` (e.g. `"additionalTypeScriptGlobs":
 - `normalizeItem(raw)` — the upstream-item → canonical [`Item`](#canonical-normalized-item)
   projection (`time`→`posted_at` `Date`, `kids`→`kids_count`, `parts`→`part_ids`,
   default flags/`type`, omit absent fields).
+- `normalizeRootItem(raw)` / `normalizeRootUser(raw)` — validate root
+  item/profile objects before projection; malformed root shapes map to
+  `upstream_error`, while malformed fan-out members are counted as
+  `failed_fetch`.
+- `validateFirebaseListLimit(limit)` — shared default/validation for the
+  `limit` parameter used by Firebase fan-out tools with the common `1..30` cap.
 - `err(code, detail)` — constructs the `"<code>: <detail>"` `Error` for the three
   taxonomy codes.
 - Count/accounting helpers maintaining the `requested_limits` / `actual_counts`
@@ -293,16 +299,19 @@ the `kids` array is not (use `threads.get` to walk it).
 **Upstream call plan and transformations.**
 
 1. `GET /v0/item/{id}.json`.
-2. Map fields: `time`→`posted_at` (`new Date(time*1000)`); `kids`→`kids_count`
+2. Validate that the root body is an item object with a positive integer `id`.
+   Malformed root objects → `upstream_error`.
+3. Map fields: `time`→`posted_at` (`new Date(time*1000)`); `kids`→`kids_count`
    (`kids.length`, else 0); `parts`→`part_ids`; `deleted`/`dead` default `false`;
-   `type` default `"unknown"`. Omit every field the upstream omits. `title` /
-   `text` / `url` / `about` are passed through as raw HTML.
+   `type` default `"unknown"`. Omit every field the upstream omits. `title`,
+   `text`, and `url` are passed through as raw HTML.
 
 **Branch and error behaviour.**
 
 - `id` not a positive integer → `validation_error`, no host call.
 - Body is JSON `null` → `not_found: no item with id {id}`.
 - Non-2xx response → `upstream_error: Hacker News API returned {status}`.
+- Non-object or malformed item body → `upstream_error: expected an item object`.
 - Otherwise → normalized `Item`, including the deleted/dead branches.
 
 **Test grounding (recorded cassettes / fixtures + host-call assertions).**
@@ -429,8 +438,9 @@ signalling the agent can page by raising `offset`.
   the two selected `item/{id}.json` records (and **not** later ids); output
   contains both titles and `truncated: true`,
   `actual_counts.stories_returned: 2`. (Existing `tests/cases/stories.list.ok.json`.)
-- *kind routing* — `kind:"show"` asserts the call hits `showstories.json`;
-  one case per kind confirms the six-way map.
+- *kind routing* — recorded cassettes for `kind:"new"`, `"best"`, `"ask"`,
+  `"show"`, and `"job"` assert the call hits the corresponding feed endpoint;
+  together with the `top` happy path, one case per kind confirms the six-way map.
 - *offset paging* — feed of 5 ids, `offset:2, limit:2` asserts calls for the 3rd
   and 4th ids and `truncated: true`.
 - *skips* — among selected ids, one returns `null`, one `{deleted:true}`, one a
@@ -530,8 +540,8 @@ visited `Set` of ids guarantees each id is fetched at most once.
 
 **Upstream call plan and transformations.**
 
-1. `GET /v0/item/{root_id}.json` → root. `null` → `not_found`; non-2xx →
-   `upstream_error`. Normalize to `Item`.
+1. `GET /v0/item/{root_id}.json` → root. `null` → `not_found`; non-2xx or
+   malformed item object → `upstream_error`. Normalize to `Item`.
 2. Seed a FIFO queue with the root's `kids` (depth 1), tracking depth per id and a
    visited `Set` seeded with `root_id`.
 3. While the queue is non-empty **and** `nodes_fetched < max_nodes`: dequeue id;
@@ -548,7 +558,7 @@ visited `Set` of ids guarantees each id is fetched at most once.
 
 - Bad `root_id` / `max_depth` / `max_nodes` → `validation_error`, zero host calls.
 - Root `null` → `not_found: no item with id {root_id}`.
-- Root non-2xx → `upstream_error`.
+- Root non-2xx or malformed item body → `upstream_error`.
 - Root has no `kids` → `comments: []`, `nodes_fetched: 0`,
   `truncated: false`.
 - `max_depth: 0` → fetch only the root and return `comments: []`,
@@ -668,9 +678,11 @@ No recursion is performed.
 
 **Upstream call plan and transformations.**
 
-1. `GET /v0/user/{username}.json`. `null` → `not_found`; non-2xx →
-   `upstream_error`. Map `created`→`created_at` (`Date`), copy `karma`, `about`
-   (omit if absent), `submitted_count = (submitted?.length ?? 0)`.
+1. `GET /v0/user/{username}.json`. `null` → `not_found`; non-2xx or malformed
+   profile object (missing/invalid `id`, `created`, `karma`, or `submitted` when
+   present) → `upstream_error`. Map `created`→`created_at` (`Date`), copy
+   `karma`, `about` (omit if absent), `submitted_count = (submitted?.length ??
+   0)`.
 2. If `include_recent > 0`: take `submitted.slice(0, include_recent)`; for each
    id **in order** `GET /v0/item/{id}.json`, classifying null/deleted-or-dead/
    non-2xx into the skip/fail buckets, else normalize to `Item`.
@@ -680,7 +692,7 @@ No recursion is performed.
 - Empty/whitespace `username` or bad `include_recent` → `validation_error`, zero
   host calls.
 - Profile `null` → `not_found: no user {username}`.
-- Profile non-2xx → `upstream_error`.
+- Profile non-2xx or malformed profile body → `upstream_error`.
 - User with no `submitted` (or `include_recent: 0`) → `recent_submissions: []`,
   hydration counts 0, one host call.
 - Per-submission failures → counted, partial result (never fatal).

@@ -1,4 +1,4 @@
-import { Item, err, fetchJson, fetchMemberItem, normalizeItem } from "../lib/hn.ts";
+import { Item, err, fetchJson, fetchMemberItem, itemKids, normalizeRootItem } from "../lib/hn.ts";
 
 interface Comment {
   id: number;
@@ -66,8 +66,8 @@ export default async function tool(
   if (rawRoot === null) {
     throw err("not_found", `no item with id ${root_id}`);
   }
-  const root = normalizeItem(rawRoot);
-  const rootKids: number[] = Array.isArray(rawRoot.kids) ? rawRoot.kids : [];
+  const root = normalizeRootItem(rawRoot);
+  const rootKids = itemKids(rawRoot);
 
   const comments: Comment[] = [];
   const visited = new Set<number>([root_id]);

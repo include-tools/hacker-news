@@ -5,6 +5,7 @@ import {
   err,
   fetchJson,
   fetchMemberItem,
+  normalizeRootUser,
   tallySkip,
 } from "../lib/hn.ts";
 
@@ -49,7 +50,8 @@ export default async function tool(
   if (raw === null) {
     throw err("not_found", `no user ${username}`);
   }
-  const submitted: number[] = Array.isArray(raw.submitted) ? raw.submitted : [];
+  const profile = normalizeRootUser(raw);
+  const submitted = profile.submitted;
 
   const buckets: MemberBuckets = emptyBuckets();
   const recent: Item[] = [];
@@ -65,9 +67,9 @@ export default async function tool(
   }
 
   const result: UserResult = {
-    id: raw.id,
-    created_at: new Date(raw.created * 1000),
-    karma: raw.karma ?? 0,
+    id: profile.id,
+    created_at: new Date(profile.created * 1000),
+    karma: profile.karma,
     submitted_count: submitted.length,
     requested_limits: { include_recent: include },
     actual_counts: {
@@ -80,6 +82,6 @@ export default async function tool(
     truncated: submitted.length > requested,
     recent_submissions: recent,
   };
-  if (raw.about !== undefined) result.about = raw.about;
+  if (profile.about !== undefined) result.about = profile.about;
   return result;
 }

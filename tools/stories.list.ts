@@ -6,6 +6,7 @@ import {
   fetchJson,
   fetchMemberItem,
   tallySkip,
+  validateFirebaseListLimit,
 } from "../lib/hn.ts";
 
 type Kind = "top" | "new" | "best" | "ask" | "show" | "job";
@@ -62,10 +63,7 @@ export default async function tool(
   if (endpoint === undefined) {
     throw err("validation_error", `kind must be one of ${Object.keys(FEEDS).join(", ")}`);
   }
-  const lim = limit ?? 10;
-  if (!Number.isInteger(lim) || lim < 1 || lim > 30) {
-    throw err("validation_error", "limit must be an integer between 1 and 30");
-  }
+  const lim = validateFirebaseListLimit(limit);
   const off = offset ?? 0;
   if (!Number.isInteger(off) || off < 0) {
     throw err("validation_error", "offset must be a non-negative integer");
