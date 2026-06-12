@@ -9,7 +9,7 @@
     }
   ],
   "expect": {
-    "contains": ["\"id\":\"JL\"", "\"submitted_count\":0"],
+    "contains": ["\"id\":\"JL\"", "\"submitted_count\":0", "\"truncated\":false"],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/user/JL.json" }
     ]

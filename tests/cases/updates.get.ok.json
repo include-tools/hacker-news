@@ -9,7 +9,7 @@
     }
   ],
   "expect": {
-    "contains": ["4.8492315e+07", "4.8492193e+07", "brycewray", "\"item_ids\":2", "\"profiles\":1"],
+    "contains": ["4.8492315e+07", "4.8492193e+07", "brycewray", "\"item_ids\":2", "\"profiles\":1", "\"item_ids_available\":2", "\"profiles_available\":1", "\"truncated\":false"],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/updates.json" }
     ]

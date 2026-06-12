@@ -22,6 +22,7 @@ interface UserResult {
     skipped_null: number;
     failed_fetch: number;
   };
+  truncated: boolean; // true when submitted ids remain beyond the hydrated window
   recent_submissions: Item[]; // canonical Items in upstream `submitted` order; [] when include_recent = 0
 }
 
@@ -76,6 +77,7 @@ export default async function tool(
       skipped_null: buckets.skipped_null,
       failed_fetch: buckets.failed_fetch,
     },
+    truncated: submitted.length > requested,
     recent_submissions: recent,
   };
   if (raw.about !== undefined) result.about = raw.about;

@@ -27,9 +27,10 @@ or recent comments in a time window.
 
 ## 4. Resolve a single HN item by id
 
-Fetch `/v0/item/{id}.json` for the canonical Firebase item shape, or
-`/api/v1/items/{id}` when an Algolia-style item with recursively embedded
-children is useful. Treat Firebase `null` and Algolia 404 as missing resources.
+Fetch `/v0/item/{id}.json` for the canonical Firebase item shape. Treat
+Firebase `null` as a missing resource. Algolia's `/api/v1/items/{id}` endpoint
+exists in the researched service surface, but this package does not expose it
+because it returns recursively embedded children without documented bounds.
 
 ## 5. Build a bounded story and comment-thread report
 
@@ -63,3 +64,6 @@ precomputed analytics endpoints.
 - Webhooks.
 - Firebase server-side search or batch item fetch.
 - Algolia full-text user search; the documented user endpoint is exact lookup.
+- Algolia recursive item lookup via `/api/v1/items/{id}`; use Firebase
+  `items.get` for one canonical item or bounded `threads.get` for discussion
+  trees.

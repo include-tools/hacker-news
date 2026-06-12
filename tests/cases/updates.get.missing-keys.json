@@ -6,7 +6,7 @@
     { "pattern": "hacker-news.firebaseio.com/v0/updates.json", "json": {} }
   ],
   "expect": {
-    "contains": ["\"item_ids\":[]", "\"profiles\":[]"],
+    "contains": ["\"item_ids\":[]", "\"profiles\":[]", "\"truncated\":false"],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/updates.json" }
     ]

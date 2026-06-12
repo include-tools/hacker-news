@@ -9,7 +9,7 @@
     }
   ],
   "expect": {
-    "contains": ["\"item_ids\":[]", "\"profiles\":[]", "\"item_ids\":0", "\"profiles\":0"],
+    "contains": ["\"item_ids\":[]", "\"profiles\":[]", "\"item_ids\":0", "\"profiles\":0", "\"truncated\":false"],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/updates.json" }
     ]

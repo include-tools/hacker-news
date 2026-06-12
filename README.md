@@ -47,10 +47,10 @@ interesting comment threads."*
 | `comments.search` | Algolia comment search by query, story, author, and time window | `limit` ≤ 50, `page` |
 | `items.get` | One item (story/comment/job/poll) by id, normalized | single fetch |
 | `threads.get` | Comment tree under a story, breadth-first with cycle safety | max depth + node budget |
-| `users.get` | Profile + optionally hydrated submitted-item sample | submission hydration capped |
+| `users.get` | Profile + optionally hydrated submitted-item sample | `include_recent` ≤ 30, truncation reported |
 | `users.search` | Exact Algolia user profile lookup | single fetch |
 | `items.recent` | Newest items walked back from `maxitem` | fetch budget |
-| `updates.get` | HN's changed-items/profiles feed | single fetch |
+| `updates.get` | HN's changed-items/profiles feed | 100 item ids + 100 profiles, truncation reported |
 
 Every result that can truncate tells you it did (`truncated`, plus
 `requested_limits` / `actual_counts`), timestamps are native `Date`s, and

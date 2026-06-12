@@ -20,7 +20,8 @@
       "\"submissions_returned\":0",
       "\"skipped_null\":1",
       "\"skipped_deleted_or_dead\":1",
-      "\"failed_fetch\":1"
+      "\"failed_fetch\":1",
+      "\"truncated\":false"
     ],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/user/bob.json" },

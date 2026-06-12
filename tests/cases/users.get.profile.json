@@ -9,7 +9,7 @@
     }
   ],
   "expect": {
-    "contains": ["\"id\":\"jl\"", "\"karma\":4500", "\"submitted_count\":4", "\"recent_submissions\":[]", "Date("],
+    "contains": ["\"id\":\"jl\"", "\"karma\":4500", "\"submitted_count\":4", "\"truncated\":true", "\"recent_submissions\":[]", "Date("],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/user/jl.json" }
     ]

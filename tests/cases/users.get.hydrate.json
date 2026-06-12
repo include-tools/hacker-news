@@ -17,7 +17,7 @@
     }
   ],
   "expect": {
-    "contains": ["Newest", "a comment", "\"submitted_count\":3", "\"submissions_requested\":2", "\"submissions_returned\":2"],
+    "contains": ["Newest", "a comment", "\"submitted_count\":3", "\"submissions_requested\":2", "\"submissions_returned\":2", "\"truncated\":true"],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/user/alice.json" },
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/10.json" },

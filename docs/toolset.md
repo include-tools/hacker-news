@@ -166,8 +166,9 @@ results, plus (where an ordered slice applies) a `truncated` boolean:
   records and their skip/fail buckets are. Each tool's section defines its exact
   fields and which of {root lookups, hydrated records, null, deleted/dead, failed
   fetch} each bucket includes.
-- `truncated` — `true` when more ordered upstream ids existed beyond what was
-  returned (so the agent can page or widen bounds).
+- `truncated` — `true` when more ordered upstream ids/usernames/search pages
+  existed beyond what was returned (so the agent can page, widen bounds, or poll
+  again as that tool's pagination strategy allows).
 
 **Effects.** Every tool is `@effect readOnly` (no side effects; in particular
 `updates.get` does **not** advance any cursor, consume events, or take a lease —
@@ -221,6 +222,11 @@ not a deferred feature:
   Firebase offers none. Use the Algolia-backed search tools where their
   documented query/tag/numeric filters apply.
 - **Algolia full-text user search** — Algolia documents exact user lookup only.
+- **Algolia recursive item lookup (`/api/v1/items/{id}`)** — Algolia documents
+  this endpoint, but its response embeds recursive `children` with no documented
+  depth or page parameter. The toolset deliberately exposes canonical Firebase
+  `items.get` for one item and bounded `threads.get` for comment trees instead
+  of inventing behaviour for an unbounded Algolia shape.
 - **Aggregate analytics endpoints** — none exist; trends/score-distributions/
   domain-counts (use case #8) are computed agent-side from items these tools
   return.
@@ -622,6 +628,7 @@ interface UserResult {
     skipped_null: number;
     failed_fetch: number;
   };
+  truncated: boolean; // submitted_count > submissions_requested
   recent_submissions: Item[];  // canonical Items in upstream `submitted` order; [] when include_recent = 0
 }
 ```
@@ -640,10 +647,13 @@ interface UserResult {
   `title`/`url`).
 
 **Bounds and truncation.** Hard cap `include_recent <= 30` ⇒ at most `1 + 30 =
-31` host calls. There is no `truncated` flag: the contract is "first N of
-`submitted`", and `submitted_count` already tells the agent how many more exist
-(`submitted_count - submissions_requested`). The unbounded `submitted` array is
-never materialised.
+31` host calls. `truncated` is `true` when `submitted_count >
+actual_counts.submissions_requested`, including profile-only requests
+(`include_recent: 0`) for users with submissions. Pagination strategy: the
+Firebase user endpoint has no cursor or offset for `submitted`, so this tool
+only exposes the first bounded window; callers may widen `include_recent` up to
+30, then use specific known ids with `items.get` rather than paging this tool.
+No recursion is performed.
 
 **Upstream call plan and transformations.**
 
@@ -668,10 +678,11 @@ never materialised.
 
 - *profile only* — `username:"jl"`, default `include_recent:0` → assert exactly
   one call `user/jl.json`; output has `karma`, `created_at` as a `Date`,
-  `submitted_count`, and `recent_submissions: []`.
+  `submitted_count`, `truncated:true` when submitted ids exist, and
+  `recent_submissions: []`.
 - *with hydration, ordered* — `submitted:[10,11,12]`, `include_recent:2` → assert
   calls `user/{name}.json`, `item/10.json`, `item/11.json` in that order (12 not
-  fetched); `submissions_returned:2`, `submitted_count:3`.
+  fetched); `submissions_returned:2`, `submitted_count:3`, `truncated:true`.
 - *case sensitivity* — `username:"JL"` and `"jl"` hit distinct paths
   `user/JL.json` vs `user/jl.json` (verbatim, no normalisation).
 - *submission skips* — among hydrated ids one `null`, one `{dead:true}`, one
@@ -681,9 +692,9 @@ never materialised.
   `calls:[]`.
 - *no-credentials* — assert no auth header on any call.
 
-**Implementation notes.** Shares `fetchJson` + `normalizeItem`. Never read or
-return the full `submitted` array beyond the `slice(0, include_recent)` window —
-that is the bound that keeps a thousand-submission account cheap. Sequential
+**Implementation notes.** Shares `fetchJson` + `normalizeItem`. Never return or
+hydrate the full `submitted` array beyond the `slice(0, include_recent)` window
+— that is the bound that keeps a thousand-submission account cheap. Sequential
 hydration keeps call order assertable.
 
 ---
@@ -700,8 +711,8 @@ result, then re-hydrate the changed ids/usernames with `items.get` / `users.get`
 
 **Do not use when** you want ranked/front-page content (`stories.list`) or
 brand-new items in creation order (`items.recent`). This tool **does not**
-hydrate — it relays ids/usernames cheaply in one call; hydration is the agent's
-choice.
+hydrate — it relays a bounded ids/usernames snapshot cheaply in one call;
+hydration is the agent's choice.
 
 **Inputs.** None.
 
@@ -711,32 +722,42 @@ choice.
 interface UpdatesResult {
   item_ids: number[];   // required — recently changed item ids, upstream order; [] if none
   profiles: string[];   // required — recently changed usernames, upstream order; [] if none
-  actual_counts: {
-    item_ids: number;   // item_ids.length
-    profiles: number;   // profiles.length
+  requested_limits: {
+    item_ids: number;   // fixed default and hard cap: 100
+    profiles: number;   // fixed default and hard cap: 100
   };
+  actual_counts: {
+    item_ids: number;             // item_ids.length, <= 100
+    profiles: number;             // profiles.length, <= 100
+    item_ids_available: number;   // upstream items.length before slicing
+    profiles_available: number;   // upstream profiles.length before slicing
+  };
+  truncated: boolean;   // item_ids_available > 100 || profiles_available > 100
 }
 ```
 
 - **Nullability:** both arrays are always present (possibly empty), never `null`.
 - **Ordering:** exactly as the upstream `updates` payload returns them
   (no re-sort, no dedupe beyond what HN provides).
-- **No hydration, so no `requested_limits`/`truncated`:** this is a single
-  pass-through read, not a fan-out or sliced tool. `actual_counts` is included for
-  observability (how much changed this poll). The arrays are **not** capped: the
-  feed only holds *recently* changed entries (upstream-bounded), and silently
-  slicing it would risk dropping a change the monitor must see — defeating the
-  tool's purpose. (If the agent wants to bound *hydration*, it slices client-side
-  before calling `items.get`/`users.get`.)
+- **No hydration:** this is a single root read, not a fan-out tool. If the agent
+  wants to hydrate returned ids/usernames, it calls `items.get`/`users.get`
+  separately.
 
-**Bounds and truncation.** Exactly one host call. Output size is whatever the
-upstream change window contains.
+**Bounds and truncation.** Exactly one host call. Fixed defaults and hard caps:
+`item_ids <= 100`, `profiles <= 100`; there are no caller inputs to widen them.
+`truncated` is `true` when either upstream array was longer than its returned
+window. `actual_counts.item_ids_available` and
+`actual_counts.profiles_available` report the upstream window size before
+slicing. Pagination strategy: Firebase exposes no cursor, offset, or stable page
+for `/v0/updates.json`; callers poll again for later snapshots and should poll
+more frequently if `truncated` is true. No recursion is possible.
 
 **Upstream call plan and transformations.**
 
 1. `GET /v0/updates.json` → `{ items, profiles }`.
 2. Project `items`→`item_ids`, `profiles`→`profiles` (default each missing array
-   to `[]`); compute `actual_counts`. No per-item fetches.
+   to `[]`); slice each to its cap, compute `requested_limits`,
+   `actual_counts`, and `truncated`. No per-item fetches.
 
 **Branch and error behaviour.**
 
@@ -756,7 +777,9 @@ refetch (rules 8–9).
 - *ok* — fixture `{ "items":[48492315,48492193], "profiles":["brycewray"] }` →
   assert one call `GET hacker-news.firebaseio.com /v0/updates.json`; output
   `item_ids:[48492315,48492193]`, `profiles:["brycewray"]`,
-  `actual_counts:{item_ids:2,profiles:1}`.
+  `requested_limits:{item_ids:100,profiles:100}`,
+  `actual_counts:{item_ids:2,profiles:1,item_ids_available:2,profiles_available:1}`,
+  `truncated:false`.
 - *empty arrays* — `{ "items":[], "profiles":[] }` → both `[]`, counts `0`.
 - *missing keys* — `{}` → both default to `[]`, counts `0`.
 - *upstream_error* — status `500` → `errorContains:"upstream_error"`.
