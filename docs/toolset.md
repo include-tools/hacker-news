@@ -321,7 +321,7 @@ the `kids` array is not (use `threads.get` to walk it).
   `GET hacker-news.firebaseio.com /v0/item/8863.json`; output contains the title,
   `by`, `kids_count`, and `posted_at` as a `Date` (`2007-04-04T19:16:40Z`).
   (Existing `tests/cases/items.get.ok.json`.)
-- *comment / poll / pollopt* — fixtures for ids `2921983` (comment: asserts
+- *comment / poll / pollopt* — recorded cassettes for ids `2921983` (comment: asserts
   `parent`, `text`, no `title`), `126809` (poll: asserts `part_ids`,
   `descendants`), `160705` (pollopt: asserts `poll`, `score`).
 - *not_found* — fixture returns `null` → `errorContains: "not_found"`. (Existing
@@ -329,7 +329,7 @@ the `kids` array is not (use `threads.get` to walk it).
 - *bad id* — `id: -4` → `errorContains: "validation_error"`, `calls: []`.
   (Existing `tests/cases/items.get.bad-id.json`.)
 - *upstream_error* — fixture status `500` → `errorContains: "upstream_error"`.
-- *no-credentials* — every fixture asserts no `Authorization` header is sent.
+- *no-credentials* — host-call assertions check no `Authorization` header is sent.
 
 **Implementation notes.** Trivial single fetch; shares `fetchJson` +
 `normalizeItem` helpers (see [shared helpers](#shared-helpers)). `id` is

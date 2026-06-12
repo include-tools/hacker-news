@@ -9,11 +9,7 @@ interface Comment {
   dead: boolean;
   depth: number; // 1 for top-level, increasing with nesting
   kids_count: number; // upstream direct-child count (may exceed replies.length when truncated)
-  // Child comments actually fetched, in HN ranked order; [] at the depth/node
-  // boundary. Each element is itself a Comment; it is typed `any[]` rather than
-  // `Comment[]` only because the toolset signature generator cannot express a
-  // self-referential type (it would recurse without bound).
-  replies: any[];
+  replies: Comment[]; // child comments actually fetched, HN ranked order
 }
 
 interface ThreadResult {

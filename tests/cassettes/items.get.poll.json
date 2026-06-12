@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "episodes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hacker-news.firebaseio.com/v0/item/126809.json",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Cache-Control": [
+            "no-cache"
+          ],
+          "Connection": [
+            "keep-alive"
+          ],
+          "Content-Length": [
+            "375"
+          ],
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 10:46:03 GMT"
+          ],
+          "Server": [
+            "nginx"
+          ],
+          "Strict-Transport-Security": [
+            "max-age=31556926; includeSubDomains; preload"
+          ]
+        },
+        "body": {
+          "by": "pg",
+          "descendants": 54,
+          "id": 126809,
+          "kids": [
+            126822,
+            126823,
+            126917,
+            126993,
+            126824,
+            126934,
+            127411,
+            126888,
+            127681,
+            126818,
+            126816,
+            126854,
+            127095,
+            126861,
+            127313,
+            127299,
+            126859,
+            126852,
+            126882,
+            126832,
+            127072,
+            127217,
+            126889,
+            126875,
+            127535
+          ],
+          "parts": [
+            126810,
+            126811,
+            126812
+          ],
+          "score": 47,
+          "time": 1204403652,
+          "title": "Poll: What would happen if News.YC had explicit support for polls?",
+          "type": "poll"
+        }
+      },
+      "recorded_at": "2026-06-12T10:46:03.000Z"
+    }
+  ]
+}

@@ -1,11 +1,6 @@
 import { Item, err, fetchJson, normalizeRootItem } from "../lib/hn.ts";
 
 /**
- * Resolve a single Hacker News item of any type (story, comment, job, poll,
- * pollopt) by its numeric id into the canonical normalized item. `deleted`/`dead`
- * items are returned (with their flags set) rather than skipped, because the
- * caller asked for that specific id. `kids_count` is returned but the `kids`
- * array is not — use threads.get to walk a discussion.
  * @effect readOnly
  */
 export default async function tool(id: number): Promise<Item> {

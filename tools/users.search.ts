@@ -7,8 +7,6 @@ interface AlgoliaUserResult {
 }
 
 /**
- * Resolve an Algolia HN Search user profile by exact username. The Algolia API
- * documents exact user lookup rather than full-text user search.
  * @effect readOnly
  */
 export default async function tool(username: string): Promise<AlgoliaUserResult> {
