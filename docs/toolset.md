@@ -536,8 +536,11 @@ a visited `Set` of ids guarantees each id is fetched at most once.
 - Bad `root_id` / `max_depth` / `max_nodes` → `validation_error`, zero host calls.
 - Root `null` → `not_found: no item with id {root_id}`.
 - Root non-2xx → `upstream_error`.
-- Root has no `kids` (e.g. a comment with no replies, or `max_depth: 0`) →
-  `comments: []`, `nodes_fetched: 0`, `truncated: false`.
+- Root has no `kids` → `comments: []`, `nodes_fetched: 0`,
+  `truncated: false`.
+- `max_depth: 0` → fetch only the root and return `comments: []`,
+  `nodes_fetched: 0`; `truncated` is `true` when the root has `kids` and
+  `false` otherwise.
 - Per-comment null/deleted/dead/non-2xx → counted, walk continues (partial
   result). A deleted/dead comment's subtree is pruned (documented limitation:
   live replies nested under a since-deleted parent are not returned — matches use
@@ -554,6 +557,10 @@ a visited `Set` of ids guarantees each id is fetched at most once.
   have `kids_count` reflecting upstream while deeper kids are unfetched.
 - *depth cap* — `max_depth:1` → asserts only depth-1 comments fetched; their
   `replies:[]` with positive `kids_count`; `truncated:true`.
+- *empty thread* — fixture root `7` with no `kids`, `max_depth:3` → assert one
+  call `GET hacker-news.firebaseio.com /v0/item/7.json`; output has
+  `comments:[]`, `nodes_fetched:0`, `max_depth_reached:0`,
+  `truncated:false`.
 - *skips* — a kid returns `{deleted:true}` (subtree pruned, asserted not
   enqueued), another returns `null`, another `500` → assert the three skip/fail
   buckets and that the walk continued.

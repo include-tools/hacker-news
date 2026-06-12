@@ -1,0 +1,17 @@
+{
+  "name": "threads.get returns an empty thread when the root has no kids",
+  "tool": "threads.get",
+  "args": { "root_id": 7, "max_depth": 3 },
+  "fixtures": [
+    {
+      "pattern": "hacker-news.firebaseio.com/v0/item/7.json",
+      "json": { "id": 7, "type": "comment", "by": "solo", "text": "no replies" }
+    }
+  ],
+  "expect": {
+    "contains": ["\"comments\":[]", "\"nodes_fetched\":0", "\"max_depth_reached\":0", "\"truncated\":false"],
+    "calls": [
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/7.json" }
+    ]
+  }
+}
