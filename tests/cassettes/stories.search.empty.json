@@ -1,0 +1,206 @@
+{
+  "version": 1,
+  "episodes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hn.algolia.com/api/v1/search?tags=story&numericFilters=points%3E%3D999999999&page=0&hitsPerPage=2",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Alt-Svc": [
+            "h3=\":443\"; ma=2592000"
+          ],
+          "Content-Length": [
+            "380"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:07:27 GMT"
+          ],
+          "Server": [
+            "Google Frontend"
+          ],
+          "Via": [
+            "1.1 google"
+          ],
+          "X-Cloud-Trace-Context": [
+            "999c37e380571dc1bd9e8e66eebb4177"
+          ]
+        },
+        "body": {
+          "exhaustive": {
+            "nbHits": true,
+            "typo": true
+          },
+          "exhaustiveNbHits": true,
+          "exhaustiveTypo": true,
+          "hits": [],
+          "hitsPerPage": 2,
+          "nbHits": 0,
+          "nbPages": 0,
+          "page": 0,
+          "params": "tags=story\u0026numericFilters=points%3E%3D999999999\u0026page=0\u0026hitsPerPage=2\u0026advancedSyntax=true\u0026analyticsTags=backend",
+          "processingTimeMS": 1,
+          "processingTimingsMS": {
+            "_request": {
+              "roundTrip": 15
+            },
+            "total": 0
+          },
+          "query": "",
+          "serverTimeMS": 1
+        }
+      },
+      "recorded_at": "2026-06-12T09:07:27.476488464Z"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hn.algolia.com/api/v1/search?tags=story&numericFilters=points%3E%3D999999999&page=0&hitsPerPage=2",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Alt-Svc": [
+            "h3=\":443\"; ma=2592000"
+          ],
+          "Content-Length": [
+            "380"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:08:34 GMT"
+          ],
+          "Server": [
+            "Google Frontend"
+          ],
+          "Via": [
+            "1.1 google"
+          ],
+          "X-Cloud-Trace-Context": [
+            "1f36a9ecb325eeb84ee784707d64190a"
+          ]
+        },
+        "body": {
+          "exhaustive": {
+            "nbHits": true,
+            "typo": true
+          },
+          "exhaustiveNbHits": true,
+          "exhaustiveTypo": true,
+          "hits": [],
+          "hitsPerPage": 2,
+          "nbHits": 0,
+          "nbPages": 0,
+          "page": 0,
+          "params": "tags=story\u0026numericFilters=points%3E%3D999999999\u0026page=0\u0026hitsPerPage=2\u0026advancedSyntax=true\u0026analyticsTags=backend",
+          "processingTimeMS": 1,
+          "processingTimingsMS": {
+            "_request": {
+              "roundTrip": 15
+            },
+            "total": 0
+          },
+          "query": "",
+          "serverTimeMS": 1
+        }
+      },
+      "recorded_at": "2026-06-12T09:08:34.815773697Z"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hn.algolia.com/api/v1/search?tags=story&numericFilters=points%3E%3D999999999&page=0&hitsPerPage=2",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Alt-Svc": [
+            "h3=\":443\"; ma=2592000"
+          ],
+          "Content-Length": [
+            "380"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:11:43 GMT"
+          ],
+          "Server": [
+            "Google Frontend"
+          ],
+          "Via": [
+            "1.1 google"
+          ],
+          "X-Cloud-Trace-Context": [
+            "032bfa4e0b0e0dd08fa1cfdc2eedfdaa"
+          ]
+        },
+        "body": {
+          "exhaustive": {
+            "nbHits": true,
+            "typo": true
+          },
+          "exhaustiveNbHits": true,
+          "exhaustiveTypo": true,
+          "hits": [],
+          "hitsPerPage": 2,
+          "nbHits": 0,
+          "nbPages": 0,
+          "page": 0,
+          "params": "tags=story\u0026numericFilters=points%3E%3D999999999\u0026page=0\u0026hitsPerPage=2\u0026advancedSyntax=true\u0026analyticsTags=backend",
+          "processingTimeMS": 1,
+          "processingTimingsMS": {
+            "_request": {
+              "roundTrip": 19
+            },
+            "total": 0
+          },
+          "query": "",
+          "serverTimeMS": 1
+        }
+      },
+      "recorded_at": "2026-06-12T09:11:43.170519444Z"
+    }
+  ]
+}

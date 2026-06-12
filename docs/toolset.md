@@ -1016,18 +1016,19 @@ calling again with `page + 1`. Empty searches return `hits: []`, `nb_hits: 0`,
 
 **Fixture/mock/live-test grounding.**
 
-- *happy relevance search* — `tests/cases/stories.search.ok.json`: fixture
-  matches `hn.algolia.com/api/v1/search`, asserts one `GET`, no Authorization,
+- *happy relevance search* — `tests/cases/stories.search.ok.json`: recorded
+  cassette for `hn.algolia.com/api/v1/search`, asserts one `GET`, no Authorization,
   and output fields including `object_id`, tags, `hits_returned`, and native
   `Date`.
-- *date-sort search* — `tests/cases/stories.search.date.json`: asserts
+- *date-sort search* — `tests/cases/stories.search.date.json`: recorded cassette asserts
   `/api/v1/search_by_date`, `sort:"date"`, first-page metadata, and a dated hit.
-- *empty results* — `tests/cases/stories.search.empty.json`: `hits: []`,
+- *empty results* — `tests/cases/stories.search.empty.json`: recorded cassette with `hits: []`,
   `nbHits:0`, `nbPages:0`; asserts success with zero hits.
 - *validation error* — `tests/cases/stories.search.bad-limit.json`: invalid
   `limit` fails before any call.
-- *upstream error* — `tests/cases/stories.search.upstream.json`: Algolia 500
-  maps to `upstream_error`.
+- *upstream error* — `tests/cases/stories.search.upstream.json`: mocked Algolia
+  500 maps to `upstream_error` because injected upstream faults cannot be
+  recorded reliably.
 - Probe grounding: `docs/probes/algolia-search-stories.json`,
   `docs/probes/algolia-search-by-date-stories.json`,
   `docs/probes/algolia-search-author-pg.json`,
@@ -1156,16 +1157,17 @@ pages are successful with `hits: []`.
 
 **Fixture/mock/live-test grounding.**
 
-- *happy scoped search* — `tests/cases/comments.search.ok.json`: fixture matches
-  `hn.algolia.com/api/v1/search`, uses `tags=comment,story_123`, asserts one
+- *happy scoped search* — `tests/cases/comments.search.ok.json`: recorded
+  cassette for `hn.algolia.com/api/v1/search`, uses `tags=comment,story_9998227`, asserts one
   unauthenticated `GET`, `object_id`, `story_id`, comment text, and native
   `Date`.
-- *empty results* — `tests/cases/comments.search.empty.json`: `hits: []`,
+- *empty results* — `tests/cases/comments.search.empty.json`: recorded cassette with `hits: []`,
   `nbHits:0`, `nbPages:0`; asserts success with zero hits.
 - *validation error* — `tests/cases/comments.search.bad-story-id.json`: invalid
   `story_id` fails before any host call.
-- *upstream error* — `tests/cases/comments.search.upstream.json`: Algolia 400
-  maps to `upstream_error`.
+- *upstream error* — `tests/cases/comments.search.upstream.json`: mocked Algolia
+  400 maps to `upstream_error` because injected upstream faults cannot be
+  recorded reliably.
 - Probe grounding: `docs/probes/algolia-search-comments.json`,
   `docs/probes/algolia-search-empty.json`, and
   `docs/probes/algolia-search-bad-filter.json`.
@@ -1238,14 +1240,15 @@ explicitly out of scope.
 
 **Fixture/mock/live-test grounding.**
 
-- *happy exact lookup* — `tests/cases/users.search.ok.json`: fixture matches
-  `hn.algolia.com/api/v1/users/pg`, asserts one unauthenticated `GET`, and
+- *happy exact lookup* — `tests/cases/users.search.ok.json`: recorded cassette
+  for `hn.algolia.com/api/v1/users/pg`, asserts one unauthenticated `GET`, and
   returns `username`, `about`, and `karma` matching
   `docs/probes/algolia-user-pg.json`.
 - *validation error* — `tests/cases/users.search.bad-username.json`: blank
   username fails with zero calls.
-- *upstream error* — `tests/cases/users.search.upstream.json`: Algolia 500 maps
-  to `upstream_error`.
+- *upstream error* — `tests/cases/users.search.upstream.json`: mocked Algolia
+  500 maps to `upstream_error` because injected upstream faults cannot be
+  recorded reliably.
 - Probe grounding: `docs/probes/algolia-user-pg.json`.
 
 **Implementation notes.** Keep this as exact lookup despite the `.search` method

@@ -1,5 +1,5 @@
 {
-  "name": "users.search surfaces Algolia user lookup upstream errors",
+  "name": "users.search maps mocked Algolia 500 because injected upstream faults cannot be recorded",
   "tool": "users.search",
   "args": { "username": "ghost" },
   "fixtures": [

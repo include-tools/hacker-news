@@ -1,5 +1,5 @@
 {
-  "name": "stories.search surfaces Algolia upstream errors",
+  "name": "stories.search maps mocked Algolia 500 because injected upstream faults cannot be recorded",
   "tool": "stories.search",
   "args": { "query": "foo", "limit": 2 },
   "fixtures": [

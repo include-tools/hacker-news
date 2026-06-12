@@ -1,5 +1,5 @@
 {
-  "name": "comments.search surfaces Algolia validation responses as upstream errors",
+  "name": "comments.search maps mocked Algolia 400 because injected upstream faults cannot be recorded",
   "tool": "comments.search",
   "args": { "query": "bar", "limit": 1 },
   "fixtures": [

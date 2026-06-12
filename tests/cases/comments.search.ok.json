@@ -1,37 +1,10 @@
 {
   "name": "comments.search searches Algolia comments for a story",
   "tool": "comments.search",
-  "args": { "query": "bar", "story_id": 123, "limit": 1 },
-  "fixtures": [
-    {
-      "pattern": "hn.algolia.com/api/v1/search",
-      "json": {
-        "hits": [
-          {
-            "objectID": "9999960",
-            "author": "dogma1138",
-            "comment_text": "barely even notice",
-            "created_at": "2015-08-03T21:27:21Z",
-            "parent_id": 9999033,
-            "points": null,
-            "story_id": 123,
-            "story_title": "Why Write Python in Visual Studio?",
-            "story_url": "https://example.com/python",
-            "_tags": ["comment", "author_dogma1138", "story_123"]
-          }
-        ],
-        "page": 0,
-        "nbHits": 1,
-        "nbPages": 1,
-        "hitsPerPage": 1,
-        "processingTimeMS": 2,
-        "query": "bar",
-        "params": "query=bar&tags=comment,story_123&hitsPerPage=1"
-      }
-    }
-  ],
+  "args": { "query": "bar", "story_id": 9998227, "limit": 1 },
+  "cassette": "comments.search.ok",
   "expect": {
-    "contains": ["barely even notice", "\"story_id\":123", "\"object_id\":\"9999960\"", "Date(2015-08-03T21:27:21Z)"],
+    "contains": ["barely even notice", "\"story_9998227\"", "\"object_id\":\"9999960\"", "Date(2015-08-03T21:27:21Z)"],
     "calls": [
       { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search", "headers": { "Authorization": "" } }
     ]

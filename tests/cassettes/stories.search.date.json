@@ -1,0 +1,320 @@
+{
+  "version": 1,
+  "episodes": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hn.algolia.com/api/v1/search_by_date?tags=story&page=0&hitsPerPage=1",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Alt-Svc": [
+            "h3=\":443\"; ma=2592000"
+          ],
+          "Content-Length": [
+            "1222"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:07:26 GMT"
+          ],
+          "Server": [
+            "Google Frontend"
+          ],
+          "Via": [
+            "1.1 google"
+          ],
+          "X-Cloud-Trace-Context": [
+            "eb2b17f9ff5696bcbd9e8e66eebb4321"
+          ]
+        },
+        "body": {
+          "exhaustive": {
+            "nbHits": false,
+            "typo": true
+          },
+          "exhaustiveNbHits": false,
+          "exhaustiveTypo": true,
+          "hits": [
+            {
+              "_highlightResult": {
+                "author": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "talvardi7"
+                },
+                "title": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "We Cut Onboarding Time by 40% Using AI – Here's What We Did (Week 5 Roun"
+                },
+                "url": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "https://theaileverageweekly.com/posts/we-cut-onboarding-time-by-40-using-ai-here-s-exactly-what-we-did-week.html"
+                }
+              },
+              "_tags": [
+                "story",
+                "author_talvardi7",
+                "story_48501653"
+              ],
+              "author": "talvardi7",
+              "created_at": "2026-06-12T09:01:04Z",
+              "created_at_i": 1781254864,
+              "num_comments": 0,
+              "objectID": "48501653",
+              "points": 1,
+              "story_id": 48501653,
+              "title": "We Cut Onboarding Time by 40% Using AI – Here's What We Did (Week 5 Roun",
+              "updated_at": "2026-06-12T09:02:01Z",
+              "url": "https://theaileverageweekly.com/posts/we-cut-onboarding-time-by-40-using-ai-here-s-exactly-what-we-did-week.html"
+            }
+          ],
+          "hitsPerPage": 1,
+          "nbHits": 3796422,
+          "nbPages": 1000,
+          "page": 0,
+          "params": "tags=story\u0026page=0\u0026hitsPerPage=1\u0026advancedSyntax=true\u0026analyticsTags=backend",
+          "processingTimeMS": 2,
+          "processingTimingsMS": {
+            "_request": {
+              "roundTrip": 15
+            },
+            "fetch": {
+              "total": 1
+            },
+            "total": 2
+          },
+          "query": "",
+          "serverTimeMS": 2
+        }
+      },
+      "recorded_at": "2026-06-12T09:07:26.607461701Z"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hn.algolia.com/api/v1/search_by_date?tags=story&page=0&hitsPerPage=1",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Alt-Svc": [
+            "h3=\":443\"; ma=2592000"
+          ],
+          "Content-Length": [
+            "1222"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:08:33 GMT"
+          ],
+          "Server": [
+            "Google Frontend"
+          ],
+          "Via": [
+            "1.1 google"
+          ],
+          "X-Cloud-Trace-Context": [
+            "44d66d83d255212745253fef6b2fdfee"
+          ]
+        },
+        "body": {
+          "exhaustive": {
+            "nbHits": false,
+            "typo": true
+          },
+          "exhaustiveNbHits": false,
+          "exhaustiveTypo": true,
+          "hits": [
+            {
+              "_highlightResult": {
+                "author": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "talvardi7"
+                },
+                "title": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "We Cut Onboarding Time by 40% Using AI – Here's What We Did (Week 5 Roun"
+                },
+                "url": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "https://theaileverageweekly.com/posts/we-cut-onboarding-time-by-40-using-ai-here-s-exactly-what-we-did-week.html"
+                }
+              },
+              "_tags": [
+                "story",
+                "author_talvardi7",
+                "story_48501653"
+              ],
+              "author": "talvardi7",
+              "created_at": "2026-06-12T09:01:04Z",
+              "created_at_i": 1781254864,
+              "num_comments": 0,
+              "objectID": "48501653",
+              "points": 1,
+              "story_id": 48501653,
+              "title": "We Cut Onboarding Time by 40% Using AI – Here's What We Did (Week 5 Roun",
+              "updated_at": "2026-06-12T09:02:01Z",
+              "url": "https://theaileverageweekly.com/posts/we-cut-onboarding-time-by-40-using-ai-here-s-exactly-what-we-did-week.html"
+            }
+          ],
+          "hitsPerPage": 1,
+          "nbHits": 3796422,
+          "nbPages": 1000,
+          "page": 0,
+          "params": "tags=story\u0026page=0\u0026hitsPerPage=1\u0026advancedSyntax=true\u0026analyticsTags=backend",
+          "processingTimeMS": 2,
+          "processingTimingsMS": {
+            "_request": {
+              "roundTrip": 15
+            },
+            "fetch": {
+              "total": 1
+            },
+            "total": 2
+          },
+          "query": "",
+          "serverTimeMS": 2
+        }
+      },
+      "recorded_at": "2026-06-12T09:08:33.981571891Z"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://hn.algolia.com/api/v1/search_by_date?tags=story&page=0&hitsPerPage=1",
+        "headers": {
+          "Accept": [
+            "*/*"
+          ],
+          "Accept-Language": [
+            "*"
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Access-Control-Allow-Origin": [
+            "*"
+          ],
+          "Alt-Svc": [
+            "h3=\":443\"; ma=2592000"
+          ],
+          "Content-Length": [
+            "975"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Fri, 12 Jun 2026 09:11:42 GMT"
+          ],
+          "Server": [
+            "Google Frontend"
+          ],
+          "Via": [
+            "1.1 google"
+          ],
+          "X-Cloud-Trace-Context": [
+            "b3e62849df6deb7d8fa1cfdc2eedf773"
+          ]
+        },
+        "body": {
+          "exhaustive": {
+            "nbHits": false,
+            "typo": true
+          },
+          "exhaustiveNbHits": false,
+          "exhaustiveTypo": true,
+          "hits": [
+            {
+              "_highlightResult": {
+                "author": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "rickybule"
+                },
+                "title": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "Personal Guardian Angel with LLM"
+                },
+                "url": {
+                  "matchLevel": "none",
+                  "matchedWords": [],
+                  "value": "https://gwern.net/guardian-angel"
+                }
+              },
+              "_tags": [
+                "story",
+                "author_rickybule",
+                "story_48501715"
+              ],
+              "author": "rickybule",
+              "created_at": "2026-06-12T09:11:13Z",
+              "created_at_i": 1781255473,
+              "num_comments": 0,
+              "objectID": "48501715",
+              "points": 1,
+              "story_id": 48501715,
+              "title": "Personal Guardian Angel with LLM",
+              "updated_at": "2026-06-12T09:11:32Z",
+              "url": "https://gwern.net/guardian-angel"
+            }
+          ],
+          "hitsPerPage": 1,
+          "nbHits": 3795219,
+          "nbPages": 1000,
+          "page": 0,
+          "params": "tags=story\u0026page=0\u0026hitsPerPage=1\u0026advancedSyntax=true\u0026analyticsTags=backend",
+          "processingTimeMS": 1,
+          "processingTimingsMS": {
+            "_request": {
+              "roundTrip": 18
+            },
+            "fetch": {
+              "scanning": 1
+            },
+            "total": 1
+          },
+          "query": "",
+          "serverTimeMS": 1
+        }
+      },
+      "recorded_at": "2026-06-12T09:11:42.356887731Z"
+    }
+  ]
+}

@@ -1,42 +1,35 @@
 # hacker-news
 
-**Give your agent Hacker News.** Front-page digests, Algolia-powered story and
-comment search, Show HN trackers, comment-thread summaries, user profiles, and
-live change monitoring — bounded, tested tools instead of raw API choreography.
-
-Built on the official Hacker News API and public Algolia HN Search API: no key,
-no signup, read-only.
-A [toolbox](https://github.com/solidarity-ai/toolbox) package.
+**Know what Hacker News is saying without wiring the APIs yourself.** Use it for
+front-page digests, Algolia-powered story and comment search, Show HN trackers,
+comment-thread summaries, user profiles, and live change monitoring.
 
 ## What your agent can do with it
 
 | Ask | Tool |
 |---|---|
-| "What's on the front page right now?" — titles, links, scores, comment counts | `stories.list` |
-| "Find HN stories about WebAssembly by newest first" | `stories.search` |
-| "Find comments mentioning this bug under story 123" | `comments.search` |
-| A daily Show HN / Ask HN / who's-hiring feed | `stories.list` (`kind: "show" / "ask" / "job"`) |
+| "What's on the front page right now?" | `stories.list` |
+| "Find the newest HN stories about WebAssembly." | `stories.search` |
+| "Find comments mentioning this bug under a specific story." | `comments.search` |
+| "Give me today's Show HN, Ask HN, or jobs feed." | `stories.list` (`kind: "show" / "ask" / "job"`) |
 | "Summarize the discussion under this post" | `threads.get` — bounded comment-tree walk |
-| "Who is this user and what do they post about?" | `users.get` — karma, account age, submitted-item sample hydrated |
-| "Verify this username in Algolia's index" | `users.search` |
-| Watch for newly created items | `items.recent` |
-| A cheap change feed for dashboards and caches | `updates.get` |
-| Resolve any HN deep link or id | `items.get` |
+| "Who is this user and what do they post about?" | `users.get` |
+| "Verify this username in Algolia's index." | `users.search` |
+| "What new items appeared since the latest known id?" | `items.recent` |
+| "Which HN items or profiles changed recently?" | `updates.get` |
+| "Resolve this HN item id." | `items.get` |
 
-The Firebase API is a bare id store — every feed is an array of ids, every item
-is its own fetch — while Algolia supplies the search index. Each tool compresses
-that work into **one bounded call** with explicit accounting, so your agent never
-hand-orchestrates fifty lookups or an unbounded search page.
+The raw Firebase API is a bare id store: every feed is an array of ids, every
+item is its own fetch, and full threads require recursive child lookups. These
+tools choose the right API, hydrate or search the useful slice, cap expansion,
+and return accounting in one call so an agent can work with HN content instead
+of choreographing endpoint calls.
 
 ## Quickstart
 
 ```sh
-toolbox install github.com/include-tools/hacker-news@v0.1.1   # adds it to ./toolbox.toolset.json
-claude   # with an .mcp.json exposing `toolbox codemode mcp`
+toolbox install github.com/include-tools/hacker-news@v0.1.0
 ```
-
-Then just ask: *"Summarize today's top 10 HN stories and pull the three most
-interesting comment threads."*
 
 ## The tools
 
@@ -52,10 +45,8 @@ interesting comment threads."*
 | `items.recent` | Newest items walked back from `maxitem` | fetch budget |
 | `updates.get` | HN's changed-items/profiles feed | 100 item ids + 100 profiles, truncation reported |
 
-Every result that can truncate tells you it did (`truncated`, plus
-`requested_limits` / `actual_counts`), timestamps are native `Date`s, and
-deleted/dead/missing items inside a fan-out are counted and skipped — never
-silent, never fatal.
-
-Full contract — per-tool inputs, outputs, error mapping, and design rationale —
-in [`docs/toolset.md`](docs/toolset.md).
+The package is unauthenticated and read-only, allows only
+`hacker-news.firebaseio.com` and `hn.algolia.com`, returns native `Date`
+timestamps, reports truncation with `requested_limits` and `actual_counts`, and
+counts deleted, dead, or missing fan-out items instead of silently hiding them;
+the full contract is in [`docs/toolset.md`](docs/toolset.md).

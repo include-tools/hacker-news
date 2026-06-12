@@ -1,24 +1,10 @@
 {
   "name": "comments.search returns empty Algolia result pages",
   "tool": "comments.search",
-  "args": { "query": "nohits", "limit": 2 },
-  "fixtures": [
-    {
-      "pattern": "hn.algolia.com/api/v1/search",
-      "json": {
-        "hits": [],
-        "page": 0,
-        "nbHits": 0,
-        "nbPages": 0,
-        "hitsPerPage": 2,
-        "processingTimeMS": 1,
-        "query": "nohits",
-        "params": "query=nohits&tags=comment&hitsPerPage=2"
-      }
-    }
-  ],
+  "args": { "limit": 2, "since": { "$date": "2100-01-01T00:00:00Z" } },
+  "cassette": "comments.search.empty",
   "expect": {
-    "contains": ["\"hits\":[]", "\"hits_returned\":0", "\"nb_hits\":0", "\"nb_pages\":0"],
+    "contains": ["\"hits\":[]", "\"hits_returned\":0", "\"nb_hits\":0", "\"nb_pages\":0", "\"numeric_filters\":[\"created_at_i>=4102444800\"]"],
     "calls": [
       { "method": "GET", "host": "hn.algolia.com", "path": "/api/v1/search", "headers": { "Authorization": "" } }
     ]
