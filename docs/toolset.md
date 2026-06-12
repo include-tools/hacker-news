@@ -259,7 +259,7 @@ not a deferred feature:
 | `users.get` | Profile a user; optional submitted-item sample (#6) | `user/{name}` + `item/{id}`×N | readOnly | 1 + include_recent (≤ 31) |
 | `users.search` | Exact Algolia user lookup (#6) | Algolia `users/{username}` | readOnly | 1 |
 | `updates.get` | Lightweight change feed (#7) | `updates` | readOnly | 1 |
-| `items.recent` | Discover brand-new items via count-down (#7) | `maxitem` + `item/{id}`×N | readOnly | 1 + 2·limit (≤ 61) |
+| `items.recent` | Discover brand-new items via count-down (#7) | `maxitem` + `item/{id}`×N | readOnly | 1 + max(3, 2·limit) (≤ 61) |
 
 No tool is `@idempotent` (live mutable data). All calls go only to the two
 declared public hosts.
@@ -847,7 +847,7 @@ interface RecentItemsResult {
     limit: number;       // effective limit (1..30)
   };
   actual_counts: {
-    scan_budget: number;            // ids the walk may inspect = 2 * limit
+    scan_budget: number;            // ids the walk may inspect = max(3, 2 * limit)
     ids_scanned: number;            // ids actually walked downward from max_id
     items_returned: number;         // hydrated live items in `items`
     skipped_deleted_or_dead: number;
@@ -871,8 +871,9 @@ interface RecentItemsResult {
   exhausted by dead/deleted/missing ids before `limit` live items were found.
 
 **Bounds and truncation.** Two bounds prevent runaway fan-out: the `limit` cap
-(≤30 returned) and a `scan_budget = 2 * limit` cap on how many ids the walk may
-inspect (so a run of deleted ids cannot scan forever). Worst case `1 + 2·30 = 61`
+(≤30 returned) and a `scan_budget = max(3, 2 * limit)` cap on how many ids the
+walk may inspect (so a run of deleted ids cannot scan forever while a
+single-item request can still skip two dead ids). Worst case `1 + 2·30 = 61`
 host calls.
 
 **Upstream call plan and transformations.**
@@ -903,18 +904,19 @@ host calls.
 - *skips within budget* — `maxitem` `100`, `item/100` `null`, `item/99`
   `{deleted:true}`, `item/98` live, `limit:1` → assert it scans 100→99→98,
   `items_returned:1`, `skipped_null:1`, `skipped_deleted_or_dead:1`.
-- *scan-budget exhaustion* — `limit:1` (budget 2) with `item/100` and `item/99`
-  both `null` → assert exactly `1 + 2 = 3` calls, `items_returned:0`,
-  `ids_scanned:2`, `items` empty.
+- *scan-budget exhaustion* — `limit:1` (budget 3) with `item/100`, `item/99`,
+  and `item/98` all `null` → assert exactly `1 + 3 = 4` calls,
+  `items_returned:0`, `ids_scanned:3`, `items` empty.
 - *maxitem upstream_error* — `maxitem` status `500` → `errorContains:
   "upstream_error"`, only the `maxitem.json` call made (no item fetches).
 - *bad limit* — `limit:0` → `errorContains:"validation_error"`, `calls:[]`.
 - *no-credentials* — assert no auth header.
 
 **Implementation notes.** Shares `fetchJson` + `normalizeItem`. The `scan_budget =
-2 * limit` heuristic keeps the call count bounded regardless of how many recent
-ids are dead/deleted; document it so agents understand why `items_returned` can
-be below `limit`. Sequential descending walk keeps host-call order assertable.
+max(3, 2 * limit)` heuristic keeps the call count bounded regardless of how many
+recent ids are dead/deleted; document it so agents understand why
+`items_returned` can be below `limit`. Sequential descending walk keeps host-call
+order assertable.
 
 ---
 

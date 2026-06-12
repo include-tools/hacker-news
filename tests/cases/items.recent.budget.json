@@ -5,14 +5,16 @@
   "fixtures": [
     { "pattern": "hacker-news.firebaseio.com/v0/maxitem.json", "json": 100 },
     { "pattern": "hacker-news.firebaseio.com/v0/item/100.json", "json": "null" },
-    { "pattern": "hacker-news.firebaseio.com/v0/item/99.json", "json": "null" }
+    { "pattern": "hacker-news.firebaseio.com/v0/item/99.json", "json": "null" },
+    { "pattern": "hacker-news.firebaseio.com/v0/item/98.json", "json": "null" }
   ],
   "expect": {
-    "contains": ["\"items_returned\":0", "\"ids_scanned\":2", "\"scan_budget\":2", "\"items\":[]"],
+    "contains": ["\"items_returned\":0", "\"ids_scanned\":3", "\"scan_budget\":3", "\"items\":[]"],
     "calls": [
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/maxitem.json" },
       { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/100.json" },
-      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/99.json" }
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/99.json" },
+      { "method": "GET", "host": "hacker-news.firebaseio.com", "path": "/v0/item/98.json" }
     ]
   }
 }

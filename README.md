@@ -152,7 +152,7 @@ Read `maxitem` and walk downward to return the newest live items of any type.
 
 | Parameter | Default | Bounds |
 |---|---|---|
-| `limit` | `10` | Integer `1..30`; scan budget is `2 * limit` item fetches. |
+| `limit` | `10` | Integer `1..30`; scan budget is `max(3, 2 * limit)` item fetches. |
 
 Output fields: `max_id`, `requested_limits { limit }`, `actual_counts {
 scan_budget, ids_scanned, items_returned, skipped_deleted_or_dead,

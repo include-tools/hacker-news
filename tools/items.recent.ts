@@ -13,7 +13,7 @@ interface RecentItemsResult {
   max_id: number; // the maxitem value observed this call
   requested_limits: { limit: number };
   actual_counts: {
-    scan_budget: number; // ids the walk may inspect = 2 * limit
+    scan_budget: number; // ids the walk may inspect = max(3, 2 * limit)
     ids_scanned: number; // ids actually walked downward from max_id
     items_returned: number;
     skipped_deleted_or_dead: number;
@@ -27,7 +27,8 @@ interface RecentItemsResult {
 /**
  * Discover the newest items on Hacker News of any type by reading `maxitem` and
  * walking ids downward, hydrating up to `limit` live ones. A `scan_budget` of
- * `2 * limit` bounds the walk so a run of dead/deleted ids cannot scan forever;
+ * `max(3, 2 * limit)` bounds the walk so a run of dead/deleted ids cannot scan
+ * forever while still allowing a single-item request to skip two dead ids.
  * `items_returned < limit` means the budget was exhausted before `limit` live
  * items were found. `truncated` is always true (older items always exist below).
  * @effect readOnly
@@ -40,7 +41,7 @@ export default async function tool(limit?: number): Promise<RecentItemsResult> {
     throw err("upstream_error", "maxitem did not return an integer");
   }
 
-  const scanBudget = 2 * lim;
+  const scanBudget = Math.max(3, 2 * lim);
   const buckets: MemberBuckets = emptyBuckets();
   const items: Item[] = [];
   let idsScanned = 0;
