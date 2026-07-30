@@ -28,7 +28,7 @@ of choreographing endpoint calls.
 ## Quickstart
 
 ```sh
-toolbox install github.com/include-tools/hacker-news@v0.1.0
+toolbox install github.com/include-tools/hacker-news@v0.2.0
 ```
 
 ## Common contract
